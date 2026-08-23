@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { dummyResumeData } from "../assets/assets"
+import React, { useState, useEffect, useCallback } from 'react'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
 import {Share2,Eye,EyeOff,Download} from 'lucide-react'
 
@@ -14,6 +13,7 @@ import ExperienceForm from "../components/ExperienceForm"
 import EducationForm from "../components/EducationForm"
 import ProjectForm from "../components/ProjectForm"
 import SkillsForm from "../components/SkillsForm"
+import AITools from "../components/AITools"
 import {useSelector} from 'react-redux'
 import api from "../configs/api"
 import toast from "react-hot-toast"
@@ -21,6 +21,7 @@ import toast from "react-hot-toast"
 const ResumeBuilder = () => {
   const { resumeId } = useParams()
   const {token}=useSelector(state=>state.auth)
+  const navigate = useNavigate()
 
   const sections = [
     { id: "personal", label: "Personal Info" },
@@ -51,27 +52,43 @@ const ResumeBuilder = () => {
   const totalSections = sections.length
   const activeSection = sections[activeSectionIndex]
 
-  const loadExistingResume = async (id) => {
-  try {
-    const { data } = await api.get(`/api/resumes/get/${id}`, {
-      headers: {
-        Authorization: token
+  const loadExistingResume = useCallback(async (id) => {
+    try {
+      const { data } = await api.get(`/api/resumes/get/${id}`, {
+        headers: {
+          Authorization: token
+        }
+      })
+
+      if (data.resume) {
+        setResumeData(data.resume)
+        document.title = data.resume.title
       }
-    })
 
-    if (data.resume) {
-      setResumeData(data.resume)
-      document.title = data.resume.title
+    } catch (error) {
+      console.log(error.message)
     }
+  }, [token])
 
-  } catch (error) {
-    console.log(error.message)
-  }
-}
-
+  // Handle "new" resume creation
   useEffect(() => {
-    if (resumeId) loadExistingResume(resumeId)
-  }, [resumeId])
+    if (resumeId === 'new') {
+      const createNewResume = async () => {
+        try {
+          const { data } = await api.post('/api/resumes/create', { title: 'Untitled Resume' }, {
+            headers: { Authorization: token }
+          })
+          navigate(`/app/builder/${data.resume._id}`, { replace: true })
+        } catch (error) {
+          toast.error(error?.response?.data?.message || error.message)
+          navigate('/app')
+        }
+      }
+      createNewResume()
+    } else if (resumeId) {
+      loadExistingResume(resumeId)
+    }
+  }, [resumeId, token, navigate, loadExistingResume])
 
   const nextSection = () => {
     setActiveSectionIndex(prev =>
@@ -177,7 +194,7 @@ const ResumeBuilder = () => {
         return null
     }
   }
-  
+
   const changeResumeVisibility=async()=>{
     try{
       const formData=new FormData()
@@ -208,7 +225,7 @@ const ResumeBuilder = () => {
   const downloadResume=()=>{
     window.print();
   }
-  
+
   const saveResume=async()=>{
     try{
       let updatedResumeData=structuredClone(resumeData)
@@ -328,11 +345,18 @@ const ResumeBuilder = () => {
                       loading:'Saving...',
                       success:'Saved!',
                       error:'Failed to save'
-                    })}className='bg-linear-to-br from-green-100 to-green-200 
-                ring-green-300 text-green-600 ring hover:ring-green-400 
+                    })}className='bg-linear-to-br from-green-100 to-green-200
+                ring-green-300 text-green-600 ring hover:ring-green-400
                 transition-all rounded-md px-6 py-2 mt-6 text-sm'>
                   Save Changes
                 </button>
+
+                {/* AI Tools */}
+                <AITools
+                  resumeId={resumeId}
+                  resumeData={resumeData}
+                  setResumeData={setResumeData}
+                />
 
               </div>
 
@@ -342,7 +366,7 @@ const ResumeBuilder = () => {
           {/* RIGHT PANEL */}
           <div className="lg:col-span-7 max-lg:mt-6">
             <div className='relative w-full'>
-              <div className='absolute bottom-2 right-2 flex items-center 
+              <div className='absolute bottom-2 right-2 flex items-center
               justify-end gap-2'>
                 {resumeData.public && (
                   <button onClick={handleShare} className='flex items-center p-2 px-4
@@ -359,8 +383,8 @@ const ResumeBuilder = () => {
                 bg-linear-to-br from-green-100 to green-200 text-green-600
                 rounded-lg ring-green-300 hover:ring transition-colors'>
                 <Download className='size-4' /> Download
-                
-                    
+
+
                 </button>
 
               </div>

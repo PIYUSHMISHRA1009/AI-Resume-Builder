@@ -5,6 +5,7 @@ import connectDB from "./configs/db.js";
 import userRouter from "./routes/UserRoutes.js";
 import aiRouter from "./routes/aiRoutes.js";
 import resumeRouter from "./routes/resumeRoutes.js";
+import analyticsRouter from "./routes/analyticsRoutes.js";
 
 await connectDB()
 
@@ -24,8 +25,9 @@ app.use(cors({
 app.get('/', (req, res) => res.send("Server is Live..."))
 
 app.use('/api/users', userRouter);
-app.use('/api/ai', aiRouter)
+app.use('/api/ai', aiRouter);
 app.use('/api/resumes', resumeRouter);
+app.use('/api/analytics', analyticsRouter);
 
 app.listen(PORT, () => {
     console.log(`Server is Running on Port ${PORT}`);
