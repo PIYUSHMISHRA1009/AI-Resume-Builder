@@ -5,12 +5,10 @@ import { Target, CheckCircle2, AlertTriangle, XCircle, Brain, Sparkles, Loader2 
 
 export default function JDMatchTool({ resumes = [], onMatchComplete }) {
   const [selectedResumeId, setSelectedResumeId] = useState(resumes[0]?._id || "");
-  const [jobTitle, setJobTitle] = useState("Business Technology Solutions Associate (BTSA)");
-  const [company, setCompany] = useState("ZS Associates");
-  const [category, setCategory] = useState("Business Technology");
-  const [jdText, setJdText] = useState(
-    `ZS is a management consulting and technology firm. We are looking for a BTSA to solve complex business problems using SQL, Python, PostgreSQL, Data Warehousing, and Power BI. Experience with ETL data pipelines and stakeholder management is preferred. Bachelor degree required.`
-  );
+  const [jobTitle, setJobTitle] = useState("");
+  const [company, setCompany] = useState("");
+  const [category, setCategory] = useState("");
+  const [jdText, setJdText] = useState("");
   const [loading, setLoading] = useState(false);
   const [matchData, setMatchData] = useState(null);
 
@@ -90,7 +88,7 @@ export default function JDMatchTool({ resumes = [], onMatchComplete }) {
               value={jobTitle}
               onChange={(e) => setJobTitle(e.target.value)}
               className="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              placeholder="e.g. BTSA / Data Analyst"
+              placeholder="e.g. Software Engineer, Data Analyst, Business Analyst"
             />
           </div>
           <div>
@@ -100,6 +98,7 @@ export default function JDMatchTool({ resumes = [], onMatchComplete }) {
               onChange={(e) => setCategory(e.target.value)}
               className="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             >
+              <option value="" disabled>Select a job category</option>
               <option value="Business Technology">Business Technology</option>
               <option value="Data Analytics">Data Analytics</option>
               <option value="Technology Consulting">Technology Consulting</option>
@@ -115,7 +114,7 @@ export default function JDMatchTool({ resumes = [], onMatchComplete }) {
             value={jdText}
             onChange={(e) => setJdText(e.target.value)}
             className="w-full text-sm border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono"
-            placeholder="Paste Job Description requirements..."
+            placeholder="Paste the Job Description here..."
           />
         </div>
 

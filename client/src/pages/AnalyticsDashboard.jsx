@@ -7,7 +7,6 @@ import {
   TrendingUp,
   Award,
   Layers,
-  Sparkles,
   GitBranch,
   BookOpen,
   CheckCircle,
@@ -80,16 +79,12 @@ export default function AnalyticsDashboard() {
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
-              Career Intelligence & Relational SQL Analytics
+              Career Intelligence & JD Analytics
             </h1>
             <p className="text-sm text-slate-500 mt-1">
-              Data-backed candidate-JD alignment, skill canonicalization, evidence extraction, and version progression.
+              Analyze candidate-JD alignment, identify skill gaps, and track resume progression across target roles.
             </p>
           </div>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
-            <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-            ZS BTSA / Data Analytics Persona
-          </span>
         </div>
 
         {/* Executive KPI Cards */}
