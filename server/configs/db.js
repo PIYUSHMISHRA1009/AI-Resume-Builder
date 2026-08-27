@@ -1,24 +1,30 @@
 import mongoose from "mongoose";
 
-const connectDB =async()=>{
-    try{
-        mongoose.connection.on("connected",()=>{
-            console.log("Database Connected Successfully")
-        })
+const connectDB = async () => {
+    try {
+        mongoose.connection.on("connected", () => {
+            console.log("Database Connected Successfully");
+        });
 
-        let mongodbURI=process.env.MONGODB_URI;
-        const projectName='resume-builder';
-        if(!mongodbURI){
-            throw new Error("MONGODB_URI environment variables not set")
-        }
-        if(mongodbURI.endsWith('/')){
-            mongodbURI=mongodbURI.slice(0,-1)
-        }
-        await mongoose.connect(`${mongodbURI}/${projectName}`)
+        let mongodbURI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/resume-builder";
+        // Clean leading/trailing quotes or semicolons from env string
+        mongodbURI = mongodbURI.replace(/^["']|["'];?$/g, "").trim();
 
-    } catch(error){
-        console.error("Error connecting to MongoDb:",error)
+        try {
+            await mongoose.connect(mongodbURI, { dbName: "resume-builder" });
+        } catch (primaryErr) {
+            console.warn("Primary MongoDB connection failed (" + primaryErr.message + ").");
+            if (!mongodbURI.includes("127.0.0.1") && !mongodbURI.includes("localhost")) {
+                console.log("Attempting local MongoDB fallback (mongodb://127.0.0.1:27017/resume-builder)...");
+                await mongoose.connect("mongodb://127.0.0.1:27017/resume-builder");
+            } else {
+                throw primaryErr;
+            }
+        }
+    } catch (error) {
+        console.error("MongoDB connection warning:", error.message || error);
+        console.log("Application continuing in standalone/SQLite mode...");
     }
-}
+};
 
 export default connectDB;

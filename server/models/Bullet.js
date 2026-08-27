@@ -31,6 +31,14 @@ const BulletSchema = new mongoose.Schema({
   embedding: {
     type: [Number],
   },
+  embeddingModel: {
+    type: String,
+    default: "gemini-embedding-2",
+    index: true,
+  },
+  embeddingDimension: {
+    type: Number,
+  },
 }, { timestamps: true });
 
 const Bullet = mongoose.model("Bullet", BulletSchema);

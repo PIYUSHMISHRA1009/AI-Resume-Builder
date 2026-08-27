@@ -15,7 +15,7 @@ const ProfessionalSummaryForm=({data,onChange,setResumeData}) =>{
         try{
             setIsGenerating(true)
             const prompt =`enhance my professional summary " ${data}"`;
-            const response =await api.post('api/ai/enhance-pro-sum',{userContent:prompt},
+            const response =await api.post('/api/ai/enhance-pro-sum',{userContent:prompt},
                 {headers:{Authorization:token}}
             )
             setResumeData(prev=>({...prev,professional_summary:response.data.enhancedContent}))

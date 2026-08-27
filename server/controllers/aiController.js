@@ -5,6 +5,14 @@ import RefinementFeedback from "../models/RefinementFeedback.js";
 import ai from "../configs/ai.js";
 import { tailorResume, indexResumeBullets, analyzeSkillGaps, refineBullet } from "../services/ragService.js";
 
+const extractProviderError = (error) => {
+  if (!error) return "Unknown error";
+  if (error.message) return error.message;
+  if (error.response?.data?.error?.message) return error.response.data.error.message;
+  if (error.code) return `Provider error (${error.code})`;
+  return "AI provider request failed";
+};
+
 
 //controller for enhancing a resume's professional summary
 //POST : /api/ai/enhance-pro-sum
@@ -35,7 +43,9 @@ export const enhanceProfessionalSummary = async (req, res) => {
         return res.status(200).json({ enhancedContent });
 
     } catch (error) {
-        return res.status(400).json({ message: error.message });
+        const providerError = extractProviderError(error);
+        console.error("enhanceProfessionalSummary error:", providerError);
+        return res.status(400).json({ message: providerError });
     }
 };
 
@@ -70,7 +80,9 @@ export const enhanceJobDescription = async (req, res) => {
         return res.status(200).json({ enhancedContent });
 
     } catch (error) {
-        return res.status(500).json({ message: error.message });
+        const providerError = extractProviderError(error);
+        console.error("enhanceJobDescription error:", providerError);
+        return res.status(502).json({ message: providerError });
     }
 };
 
@@ -171,7 +183,9 @@ export const uploadResume = async (req, res) => {
         res.json(newResume);
 
     } catch (error) {
-        return res.status(500).json({ message: error.message });
+        const providerError = extractProviderError(error);
+        console.error("uploadResume error:", providerError);
+        return res.status(500).json({ message: providerError });
     }
 };
 
@@ -200,7 +214,9 @@ export const tailorResumeController = async (req, res) => {
         });
 
     } catch (error) {
-        return res.status(500).json({ message: error.message });
+        const providerError = extractProviderError(error);
+        console.error("tailorResumeController error:", providerError);
+        return res.status(502).json({ message: providerError });
     }
 };
 
@@ -227,7 +243,9 @@ export const indexResumeBulletsController = async (req, res) => {
         });
 
     } catch (error) {
-        return res.status(500).json({ message: error.message });
+        const providerError = extractProviderError(error);
+        console.error("indexResumeBulletsController error:", providerError);
+        return res.status(500).json({ message: providerError });
     }
 };
 
@@ -249,7 +267,9 @@ export const getRagLogsController = async (req, res) => {
         return res.status(200).json({ logs });
 
     } catch (error) {
-        return res.status(500).json({ message: error.message });
+        const providerError = extractProviderError(error);
+        console.error("getRagLogsController error:", providerError);
+        return res.status(500).json({ message: providerError });
     }
 };
 
@@ -285,7 +305,9 @@ export const getRagLogsController = async (req, res) => {
         bulletId,
       });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      const providerError = extractProviderError(error);
+      console.error("refineBulletController error:", providerError);
+      res.status(500).json({ message: providerError });
     }
   };
 
@@ -330,6 +352,8 @@ export const getRagLogsController = async (req, res) => {
         skillGaps: enhancedSkillGaps,
       });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      const providerError = extractProviderError(error);
+      console.error("skillGapAnalysisController error:", providerError);
+      res.status(500).json({ message: providerError });
     }
   };

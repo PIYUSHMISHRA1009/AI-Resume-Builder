@@ -107,6 +107,8 @@ export const indexResumeBullets = async (resumeId, userId) => {
       source: bullet.source,
       metadata: bullet.metadata,
       embedding,
+      embeddingModel: process.env.EMBEDDING_MODEL,
+      embeddingDimension: embedding.length,
     });
     created.push(doc);
   }
@@ -124,7 +126,8 @@ export const retrieveBullets = async (userId, jdEmbedding, topK = 5, resumeId = 
   // Helper to get raw bullet scores (without feedback boost)
   const getRawBullets = async () => {
     const userIdObj = new mongoose.Types.ObjectId(userId);
-    const vectorFilter = { userId: userIdObj };
+    const currentEmbeddingModel = process.env.EMBEDDING_MODEL || "gemini-embedding-2";
+    const vectorFilter = { userId: userIdObj, embeddingModel: currentEmbeddingModel };
 
     if (resumeId) {
       vectorFilter.resumeId = new mongoose.Types.ObjectId(resumeId);
@@ -169,7 +172,7 @@ export const retrieveBullets = async (userId, jdEmbedding, topK = 5, resumeId = 
     }
 
     // Fallback: in-memory cosine similarity
-    const query = { userId: userIdObj };
+    const query = { userId: userIdObj, embeddingModel: currentEmbeddingModel };
     if (resumeId) {
       query.resumeId = new mongoose.Types.ObjectId(resumeId);
     }
@@ -325,10 +328,13 @@ export const analyzeSkillGaps = async (userId, jdText, threshold) => {
   // Get embedding for the job description
   const jdEmbedding = await getEmbedding(jdText);
 
+  const currentEmbeddingModel = process.env.EMBEDDING_MODEL || "gemini-embedding-2";
+
   // Get all skill bullets for the user (source: "skill")
   const skillBullets = await Bullet.find({
     userId: userIdObj,
-    source: "skill"
+    source: "skill",
+    embeddingModel: currentEmbeddingModel,
   }).exec();
 
   if (!skillBullets || skillBullets.length === 0) {

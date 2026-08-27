@@ -1,6 +1,28 @@
 import Resume from "../models/Resume.js";
 import imagekit from "../configs/imageKit.js";
-import fs from 'fs';
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const safeUnlink = (filePath) => {
+  if (!filePath) return;
+  try {
+    fs.unlinkSync(filePath);
+  } catch (_err) {
+    // ignore cleanup errors
+  }
+};
+
+const TMP_DIR = path.join(__dirname, "../../data/tmp");
+
+const ensureTmpDir = () => {
+  if (!fs.existsSync(TMP_DIR)) {
+    fs.mkdirSync(TMP_DIR, { recursive: true });
+  }
+};
 
 //Controller for creating a new Resume
 //POST: /api/resumes/create
@@ -80,6 +102,9 @@ export const getPublicResumeId = async (req, res) => {
 //controller for updating a resume
 //PUT: /api/resumes/update
 export const updateResume = async (req, res) => {
+    ensureTmpDir();
+    const uploadedFilePath = req.file?.path || null;
+
     try {
         const userId = req.userId;
         const { resumeId, resumeData, removeBackground } = req.body;
@@ -93,21 +118,28 @@ export const updateResume = async (req, res) => {
             resumeDataCopy=structuredClone(resumeData)
         }
 
-
         if (image) {
-            const imageBufferData = fs.createReadStream(image.path);
+            try {
+                const imageBufferData = fs.createReadStream(image.path);
 
-            const response = await imagekit.files.upload({
-                file: imageBufferData,
-                fileName: 'resume.png',
-                folder: 'user-resumes',
-                transformation: {
-                    pre: 'w-300,h-300,fo-face,z-0.75' +
-                        (removeBackground ? ',e-bgremove' : '')
-                }
-            });
+                const response = await imagekit.files.upload({
+                    file: imageBufferData,
+                    fileName: 'resume.png',
+                    folder: 'user-resumes',
+                    transformation: {
+                        pre: 'w-300,h-300,fo-face,z-0.75' +
+                            (removeBackground ? ',e-bgremove' : '')
+                    }
+                });
 
-            resumeDataCopy.personal_info.image = response.url;
+                resumeDataCopy.personal_info = resumeDataCopy.personal_info || {};
+                resumeDataCopy.personal_info.image = response.url;
+            } catch (imageError) {
+                console.error("ImageKit upload failed:", imageError.message);
+                return res.status(400).json({ message: `Image upload failed: ${imageError.message}` });
+            } finally {
+                safeUnlink(uploadedFilePath);
+            }
         }
 
         const resume = await Resume.findOneAndUpdate(
@@ -119,6 +151,8 @@ export const updateResume = async (req, res) => {
         return res.status(200).json({ message: 'Saved Successfully', resume });
 
     } catch (error) {
-        return res.status(400).json({ message: error.message });
+        safeUnlink(uploadedFilePath);
+        console.error("Resume update error:", error);
+        return res.status(error instanceof multer.MulterError ? 400 : 500).json({ message: error.message });
     }
 };

@@ -8,17 +8,15 @@ const RETRY_DELAY_MS = 500;
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
- * Embed a text string using the configured embedding model.
- * Reuses the existing OpenAI-compatible `ai` client (Google endpoint).
- * Add an `OPENAI_EMBEDDING_KEY` env var + separate client if you need a
- * dedicated OpenAI key for embeddings.
+ * Embed a text string using the configured embedding model via the
+ * OpenAI-compatible Gemini endpoint.
  */
 export const getEmbedding = async (text) => {
   if (!text || typeof text !== "string" || !text.trim()) {
     throw new Error("Cannot embed empty text");
   }
 
-  const model = process.env.EMBEDDING_MODEL || "text-embedding-004";
+  const model = process.env.EMBEDDING_MODEL || "gemini-embedding-2";
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
