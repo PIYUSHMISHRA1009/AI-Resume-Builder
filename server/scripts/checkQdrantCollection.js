@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { QdrantClient } from "@qdrant/js-client-rest";
 
 const client = new QdrantClient({

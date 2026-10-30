@@ -8,8 +8,8 @@
  *   node scripts/validateQdrantMigration.js
  */
 
+import "dotenv/config";
 import mongoose from "mongoose";
-import dotenv from "dotenv";
 import Bullet from "../models/Bullet.js";
 import {
   initQdrant,
@@ -17,8 +17,6 @@ import {
   searchQdrant,
   getQdrantHealth,
 } from "../services/vectorStore/index.js";
-
-dotenv.config();
 
 const validate = async () => {
   const mongodbUri = process.env.MONGODB_URI?.replace(/^["']|["'];?$/g, "").trim();

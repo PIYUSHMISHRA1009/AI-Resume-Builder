@@ -1,18 +1,20 @@
+import "dotenv/config";
 import { QdrantClient } from "@qdrant/js-client-rest";
+import { initQdrant, qdrantConfig } from "../services/vectorStore/index.js";
 
 const client = new QdrantClient({
   url: process.env.QDRANT_URL,
   apiKey: process.env.QDRANT_API_KEY,
 });
 
-const COLLECTION_NAME =
-  process.env.QDRANT_COLLECTION || "resume_embeddings";
+const COLLECTION_NAME = qdrantConfig.collection;
 
 async function main() {
   try {
+    await initQdrant();
     // Deterministic test vector
     const vector = Array.from(
-      { length: 3072 },
+      { length: Number.parseInt(process.env.EMBEDDING_DIMENSIONS || "3072", 10) },
       (_, index) => (index % 100) / 100
     );
 
