@@ -85,7 +85,7 @@ export const evaluateMatch = async (req, res) => {
       return res.status(404).json({ message: "Resume not found" });
     }
 
-    const jd = await JobDescription.findOne({ _id: jobId });
+    const jd = await JobDescription.findOne({ _id: jobId, userId });
     if (!jd) {
       return res.status(404).json({ message: "Job Description not found" });
     }

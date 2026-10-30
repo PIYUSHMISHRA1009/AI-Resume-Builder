@@ -100,6 +100,23 @@ describe("Express app auth and AI input validation", () => {
     mockJobDescriptionFindOne.mockReset();
   });
 
+  it("limits match-analysis job-description lookups to the authenticated user", async () => {
+    const userId = "match-ownership-user";
+    mockResumeFindOne.mockResolvedValue({});
+    mockJobDescriptionFindOne.mockResolvedValue(null);
+
+    const response = await request(app)
+      .post("/api/analytics/match")
+      .set("Authorization", `Bearer ${jwt.sign({ userId }, secret)}`)
+      .send({ resumeId: "resume-id", jobId: "job-id" });
+
+    expect(response.status).toBe(404);
+    expect(mockResumeFindOne).toHaveBeenCalledWith({ _id: "resume-id", userId });
+    expect(mockJobDescriptionFindOne).toHaveBeenCalledWith({ _id: "job-id", userId });
+    mockResumeFindOne.mockReset();
+    mockJobDescriptionFindOne.mockReset();
+  });
+
   it("returns 400 when an upload endpoint receives no file", async () => {
     const response = await request(app)
       .post("/api/optimizer/upload-resume-document")
