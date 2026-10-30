@@ -151,9 +151,13 @@ describe("Qdrant config and store safety", () => {
 
   it("refuses an existing collection with a mismatched vector size", async () => {
     mockState.vectorSize = 1536;
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => {});
     const store = await import("../../../server/services/vectorStore/index.js");
 
     await expect(store.initQdrant()).rejects.toThrow(/vector size mismatch.*3072.*1536/);
+    expect(errorLog).toHaveBeenCalledWith(
+      "[Qdrant] Qdrant collection vector size mismatch (configured 3072, existing 1536)"
+    );
     expect(mockQdrant.createCollection).not.toHaveBeenCalled();
     expect(mockQdrant.createPayloadIndex).not.toHaveBeenCalled();
   });

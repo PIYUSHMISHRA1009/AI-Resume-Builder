@@ -74,14 +74,14 @@ export const initializeCollection = async () => {
   const existingDistance = vectors?.distance;
 
   if (existingSize !== VECTOR_SIZE) {
-    throw new Error(
-      `Qdrant collection vector size mismatch (configured ${VECTOR_SIZE}, existing ${existingSize ?? "unknown"})`
-    );
+    const message = `Qdrant collection vector size mismatch (configured ${VECTOR_SIZE}, existing ${existingSize ?? "unknown"})`;
+    console.error(`[Qdrant] ${message}`);
+    throw new Error(message);
   }
   if (existingDistance !== DISTANCE) {
-    throw new Error(
-      `Qdrant collection distance mismatch (configured ${DISTANCE}, existing ${existingDistance ?? "unknown"})`
-    );
+    const message = `Qdrant collection distance mismatch (configured ${DISTANCE}, existing ${existingDistance ?? "unknown"})`;
+    console.error(`[Qdrant] ${message}`);
+    throw new Error(message);
   }
 
   const payloadSchema = collectionInfo.payload_schema || {};
