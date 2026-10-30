@@ -1,7 +1,7 @@
 import { createRequire } from "node:module";
-import request from "supertest";
-import jwt from "jsonwebtoken";
+import { createRequire } from "node:module";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import app from "@server/app.js";
 
 const { mockGetRedis, mockWarnRedis, mockCompletion } = vi.hoisted(() => ({
   mockGetRedis: vi.fn(),
@@ -58,9 +58,9 @@ vi.mock("@server/services/optimizerService.js", () => ({
   AiMalformedResponseError: class AiMalformedResponseError extends Error {},
 }));
 
-import app from "@server/app.js";
-
 const require = createRequire(new URL("../../../server/package.json", import.meta.url));
+const request = require("supertest");
+const jwt = require("jsonwebtoken");
 const RedisMock = require("ioredis-mock");
 const jwtSecret = "test-only-redis-jwt-secret";
 let userSequence = 0;

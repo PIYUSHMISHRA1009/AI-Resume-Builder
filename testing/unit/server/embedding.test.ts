@@ -1,4 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+vi.mock('@server/configs/ai.js', () => ({
+  default: { embeddings: { create: vi.fn() } },
+}));
+
 import { cosineSimilarity, chunkExperience } from '@server/services/embeddingService.js';
 
 describe('Embedding Service', () => {

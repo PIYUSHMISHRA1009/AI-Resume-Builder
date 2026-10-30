@@ -1,5 +1,4 @@
-import request from "supertest";
-import jwt from "jsonwebtoken";
+import { createRequire } from "node:module";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 const { mockResumeFindOne, mockResumeFindOneAndUpdate, mockJobDescriptionFindOne } = vi.hoisted(() => ({
@@ -52,6 +51,9 @@ vi.mock("@server/services/optimizerService.js", () => ({
 
 import app from "@server/app.js";
 
+const require = createRequire(new URL("../../../server/package.json", import.meta.url));
+const request = require("supertest");
+const jwt = require("jsonwebtoken");
 const secret = "test-only-jwt-secret";
 const token = () => jwt.sign({ userId: "507f1f77bcf86cd799439011" }, secret, { expiresIn: "1h" });
 
