@@ -19,9 +19,10 @@ async function main() {
     await client.upsert(COLLECTION_NAME, {
       points: [
         {
-          id: 1,
+          id: "00000000-0000-4000-8000-000000000001",
           vector,
           payload: {
+            userId: "qdrant-connectivity-test",
             type: "test",
             source: "qdrant-connectivity-test",
             text: "This is a Qdrant test document.",
@@ -36,6 +37,11 @@ async function main() {
       query: vector,
       limit: 1,
       with_payload: true,
+      filter: {
+        must: [
+          { key: "userId", match: { value: "qdrant-connectivity-test" } },
+        ],
+      },
     });
 
     console.log("✅ Test vector retrieved");
