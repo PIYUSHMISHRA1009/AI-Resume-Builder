@@ -117,7 +117,7 @@ export const indexResumeBullets = async (resumeId, userId) => {
   // Also delete from Qdrant if enabled
   if (VECTOR_STORE !== "mongodb" && existingBulletIds.length > 0) {
     try {
-      await deleteFromQdrant(existingBulletIds);
+      await deleteFromQdrant(resume.userId.toString(), existingBulletIds);
     } catch {
       console.warn("[Qdrant] Delete failed; MongoDB remains authoritative.");
     }

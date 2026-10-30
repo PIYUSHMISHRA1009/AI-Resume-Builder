@@ -9,7 +9,7 @@ import { QdrantClient } from "@qdrant/js-client-rest";
 import { QDRANT_API_KEY, QDRANT_URL, qdrantConfig } from "../../configs/qdrant.js";
 
 const COLLECTION_NAME = qdrantConfig.collection;
-const VECTOR_SIZE = 3072;
+const VECTOR_SIZE = Number.parseInt(process.env.EMBEDDING_DIMENSIONS || "3072", 10);
 const DISTANCE = "Cosine";
 
 let client = null;
@@ -47,6 +47,11 @@ const stringToUnsignedInt = (str) => {
  * Ensure the Qdrant collection exists with correct configuration.
  */
 export const initializeCollection = async () => {
+  if (isInitialized) return;
+  if (!Number.isInteger(VECTOR_SIZE) || VECTOR_SIZE < 1) {
+    throw new Error("EMBEDDING_DIMENSIONS must be a positive integer");
+  }
+
   const qdrant = getClient();
   const collections = await qdrant.getCollections();
   const exists = collections.collections.some(
@@ -63,32 +68,30 @@ export const initializeCollection = async () => {
     console.log(`[Qdrant] Created collection: ${COLLECTION_NAME}`);
   }
 
-  // Ensure payload indexes exist for filtered search
-  try {
-    await qdrant.createPayloadIndex(COLLECTION_NAME, {
-      field_name: "userId",
-      field_schema: "keyword",
-    });
-  } catch (e) {
-    // Index may already exist
+  const collectionInfo = await qdrant.getCollection(COLLECTION_NAME);
+  const vectors = collectionInfo.config?.params?.vectors;
+  const existingSize = vectors?.size;
+  const existingDistance = vectors?.distance;
+
+  if (existingSize !== VECTOR_SIZE) {
+    throw new Error(
+      `Qdrant collection vector size mismatch (configured ${VECTOR_SIZE}, existing ${existingSize ?? "unknown"})`
+    );
+  }
+  if (existingDistance !== DISTANCE) {
+    throw new Error(
+      `Qdrant collection distance mismatch (configured ${DISTANCE}, existing ${existingDistance ?? "unknown"})`
+    );
   }
 
-  try {
-    await qdrant.createPayloadIndex(COLLECTION_NAME, {
-      field_name: "resumeId",
-      field_schema: "keyword",
-    });
-  } catch (e) {
-    // Index may already exist
-  }
-
-  try {
-    await qdrant.createPayloadIndex(COLLECTION_NAME, {
-      field_name: "embeddingModel",
-      field_schema: "keyword",
-    });
-  } catch (e) {
-    // Index may already exist
+  const payloadSchema = collectionInfo.payload_schema || {};
+  for (const fieldName of ["userId", "resumeId", "embeddingModel", "bulletId"]) {
+    if (!payloadSchema[fieldName]) {
+      await qdrant.createPayloadIndex(COLLECTION_NAME, {
+        field_name: fieldName,
+        field_schema: "keyword",
+      });
+    }
   }
 
   isInitialized = true;
@@ -107,6 +110,9 @@ export const upsertVectors = async (points) => {
   }
 
   const qdrant = getClient();
+  if (points.some((point) => !point.payload?.userId)) {
+    throw new Error("Qdrant points require a userId payload");
+  }
   const qdrantPoints = points.map((p) => ({
     id: stringToUnsignedInt(p.bulletId),
     vector: p.vector,
@@ -128,13 +134,14 @@ export const upsertVectors = async (points) => {
  *
  * @param {Array<string>} bulletIds - MongoDB Bullet _id strings
  */
-export const deleteVectorsByBulletIds = async (bulletIds) => {
+export const deleteVectorsByBulletIds = async (userId, bulletIds) => {
   if (!isInitialized) {
     await initializeCollection();
   }
 
   const qdrant = getClient();
 
+  if (!userId) throw new Error("Qdrant deletes require a userId filter");
   if (bulletIds.length === 0) return;
 
   // Qdrant delete by filter
@@ -142,10 +149,12 @@ export const deleteVectorsByBulletIds = async (bulletIds) => {
     filter: {
       must: [
         {
+          key: "userId",
+          match: { value: userId },
+        },
+        {
           key: "bulletId",
-          match: {
-            value: bulletIds,
-          },
+          match: { any: bulletIds },
         },
       ],
     },
@@ -161,6 +170,7 @@ export const deleteVectorsByBulletIds = async (bulletIds) => {
  * @returns {Array} Search results with bulletId, text, source, metadata, score
  */
 export const searchVectors = async (queryVector, topK = 5, filter = {}) => {
+  if (!filter.userId) throw new Error("Qdrant searches require a userId filter");
   if (!isInitialized) {
     await initializeCollection();
   }
@@ -169,12 +179,10 @@ export const searchVectors = async (queryVector, topK = 5, filter = {}) => {
 
   const mustConditions = [];
 
-  if (filter.userId) {
-    mustConditions.push({
-      key: "userId",
-      match: { value: filter.userId },
-    });
-  }
+  mustConditions.push({
+    key: "userId",
+    match: { value: filter.userId },
+  });
 
   if (filter.resumeId) {
     mustConditions.push({
