@@ -1,4 +1,5 @@
 import Resume from "../models/Resume.js";
+import multer from "multer";
 import imagekit from "../configs/imageKit.js";
 import fs from "fs";
 import path from "path";
