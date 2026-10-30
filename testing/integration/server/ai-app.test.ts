@@ -2,13 +2,19 @@ import request from "supertest";
 import jwt from "jsonwebtoken";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
+const { mockResumeFindOne, mockJobDescriptionFindOne } = vi.hoisted(() => ({
+  mockResumeFindOne: vi.fn(),
+  mockJobDescriptionFindOne: vi.fn(),
+}));
+
 vi.mock("@server/configs/ai.js", () => ({
   default: { chat: { completions: { create: vi.fn() } }, embeddings: { create: vi.fn() } },
 }));
+vi.mock("@server/configs/redis.js", () => ({ getRedis: () => null, warnRedisUnavailable: vi.fn() }));
 vi.mock("@server/configs/imageKit.js", () => ({ default: { files: { upload: vi.fn() } } }));
 vi.mock("@server/models/User.js", () => ({ default: {} }));
-vi.mock("@server/models/Resume.js", () => ({ default: {} }));
-vi.mock("@server/models/JobDescription.js", () => ({ default: {} }));
+vi.mock("@server/models/Resume.js", () => ({ default: { findOne: mockResumeFindOne } }));
+vi.mock("@server/models/JobDescription.js", () => ({ default: { findOne: mockJobDescriptionFindOne } }));
 vi.mock("@server/models/ResumeVersion.js", () => ({ default: {} }));
 vi.mock("@server/models/MatchRecord.js", () => ({ default: {} }));
 vi.mock("@server/models/Bullet.js", () => ({ default: {} }));
@@ -37,6 +43,7 @@ const token = () => jwt.sign({ userId: "507f1f77bcf86cd799439011" }, secret, { e
 describe("Express app auth and AI input validation", () => {
   beforeAll(() => {
     process.env.JWT_SECRET = secret;
+    delete process.env.REDIS_URL;
   });
 
   it.each([
@@ -74,6 +81,23 @@ describe("Express app auth and AI input validation", () => {
       .send({});
 
     expect(response.status).toBe(400);
+  });
+
+  it("limits optimizer job-description lookups to the authenticated user", async () => {
+    const userId = "ownership-user";
+    mockResumeFindOne.mockResolvedValue({ skills: [], experience: [], project: [], education: [] });
+    mockJobDescriptionFindOne.mockResolvedValue(null);
+
+    const response = await request(app)
+      .post("/api/analytics/optimize")
+      .set("Authorization", `Bearer ${jwt.sign({ userId }, secret)}`)
+      .send({ resumeId: "resume-id", jobId: "job-id" });
+
+    expect(response.status).toBe(404);
+    expect(mockResumeFindOne).toHaveBeenCalledWith({ _id: "resume-id", userId });
+    expect(mockJobDescriptionFindOne).toHaveBeenCalledWith({ _id: "job-id", userId });
+    mockResumeFindOne.mockReset();
+    mockJobDescriptionFindOne.mockReset();
   });
 
   it("returns 400 when an upload endpoint receives no file", async () => {
