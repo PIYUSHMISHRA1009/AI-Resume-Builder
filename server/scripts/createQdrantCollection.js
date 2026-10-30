@@ -32,9 +32,8 @@ async function main() {
     console.log(`Collection: ${COLLECTION_NAME}`);
     console.log("Dimensions: 3072");
     console.log("Distance: Cosine");
-  } catch (error) {
+  } catch {
     console.error("❌ Failed to create Qdrant collection");
-    console.error(error);
     process.exit(1);
   }
 }

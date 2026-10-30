@@ -228,8 +228,8 @@ export const healthCheck = async () => {
     const qdrant = getClient();
     await qdrant.getCollections();
     return { status: "ok", collection: COLLECTION_NAME };
-  } catch (error) {
-    return { status: "error", message: error.message };
+  } catch {
+    return { status: "error" };
   }
 };
 

@@ -14,9 +14,8 @@ async function main() {
 
     console.log("✅ Collection verified");
     console.log(JSON.stringify(info, null, 2));
-  } catch (error) {
+  } catch {
     console.error("❌ Could not read collection");
-    console.error(error);
     process.exit(1);
   }
 }

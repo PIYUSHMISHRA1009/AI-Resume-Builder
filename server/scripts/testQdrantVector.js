@@ -46,9 +46,8 @@ async function main() {
 
     console.log("✅ Test vector retrieved");
     console.log(JSON.stringify(result.points, null, 2));
-  } catch (error) {
+  } catch {
     console.error("❌ Qdrant vector test failed");
-    console.error(error);
     process.exit(1);
   }
 }

@@ -48,7 +48,7 @@ const validate = async () => {
   console.log(`Qdrant health: ${qdrantHealth.status}`);
 
   if (qdrantHealth.status !== "ok") {
-    console.error("Qdrant is not available:", qdrantHealth.message);
+    console.error("Qdrant is not available");
     await mongoose.disconnect();
     process.exit(1);
   }
