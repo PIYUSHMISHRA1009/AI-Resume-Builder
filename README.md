@@ -223,11 +223,16 @@ The analytics engine (`server/services/sqlAnalyticsService.js`) runs standard re
 ### AI (`/api/ai`)
 - `POST /enhance-pro-sum` — Enhance professional summary.
 - `POST /enhance-job-desc` — Enhance job description bullets.
-- `POST /upload-resume` — Parse raw PDF resume into structured JSON.
+- `POST /upload-resume` — Parse supplied resume text into structured JSON.
 - `POST /tailor-resume` — RAG-based bullet generation grounded in candidate corpus.
 - `POST /index-resume` — Index resume bullets into vector store.
 - `GET /rag-logs` — Fetch RAG evaluation metrics and logs.
 - `POST /refine-bullet` — Refine a bullet point based on user feedback.
+
+### Optimizer
+- `POST /api/analytics/optimize` — Generate recommendations for an owned resume and job description.
+- `POST /api/optimizer/upload-resume-document` — Extract and parse an uploaded PDF or DOCX resume.
+- `POST /api/optimizer/upload-jd-document` — Extract text from an uploaded PDF, DOCX, or TXT job description.
 
 ### Analytics (`/api/analytics`)
 - `POST /jd/parse` — Parse and save target job description.
@@ -301,7 +306,7 @@ VITE_BASE_URL=http://localhost:3000
 
 ```bash
 cd server
-npm install
+npm ci
 
 # Seed SQLite OLAP read-model & MongoDB with synthetic demo data
 node scripts/seedAnalyticsData.js
@@ -314,7 +319,7 @@ npm run server
 
 ```bash
 cd client
-npm install
+npm ci
 npm run dev
 ```
 
@@ -322,26 +327,25 @@ npm run dev
 
 ## Testing
 
-Backend test suites are implemented using Node.js assertion modules:
+The server test suite uses Vitest. Its default tests mock external services, and the HTTP tests use Supertest:
 
 ```bash
 cd server
 
-# Run RAG functionality tests
-node tests/rag.test.js
-
-# Run RAG refinement & feedback logic tests
-node tests/nextLevelFeatures.test.js
-
-# Run Skill Normalization, Evidence Extraction, Matching, & SQLite SQL tests
-node tests/analytics.test.js
+npm test
 ```
 
-### Verified Test Results
-- `rag.test.js`: All bullet extraction, cosine similarity, and RAG prompt grounding assertions passed.
-- `nextLevelFeatures.test.js`: All skill gap sorting, refinement message construction, and feedback boost assertions passed.
-- `analytics.test.js`: All skill normalization, evidence strength classification, match scoring, and SQLite window function (`LAG()`, `DENSE_RANK()`) assertions passed cleanly.
-- Client Build (`npm run build` in `client/`): Passed (`1889 modules transformed`).
+The older MongoMemoryServer suites are opt-in: `npm run test:legacy-integration`.
+
+## Redis (optional)
+
+Redis provides per-user rate limiting for AI routes and response caching for professional-summary and job-description text enhancement. Redis is off unless `REDIS_URL` is set. Rate limiting and caching fail open if Redis is unavailable, so requests continue without Redis. Start a local Redis instance with:
+
+```bash
+docker run -p 6379:6379 redis:7
+```
+
+Then set `REDIS_URL=redis://127.0.0.1:6379` in `server/.env`. Resume uploads and parsing are rate limited but are not cached.
 
 ---
 

@@ -4,4 +4,5 @@ server/data/*.db
 node_modules/
 .env
 .env.*
+!.env.example
 testing/fixtures/generated/
