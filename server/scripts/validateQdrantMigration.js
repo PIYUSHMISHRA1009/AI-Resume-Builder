@@ -59,6 +59,7 @@ const validate = async () => {
 
   const qdrantCount = collectionInfo.points_count || 0;
   console.log(`Qdrant points count: ${qdrantCount}`);
+  let valid = true;
 
   // Validate counts match
   console.log("\n--- Count Validation ---");
@@ -66,9 +67,10 @@ const validate = async () => {
     console.log(`✅ Counts match: ${mongoCount}`);
   } else {
     console.log(`⚠️  Count mismatch: MongoDB=${mongoCount}, Qdrant=${qdrantCount}`);
+    valid = false;
   }
 
-  // Validate sample vectors
+  // Validate sampled points by ID as nearest-neighbor ties need not rank self first.
   console.log("\n--- Sample Vector Validation ---");
   const sampleBullets = await Bullet.find({
     embedding: { $exists: true, $ne: [] },
@@ -80,6 +82,7 @@ const validate = async () => {
   for (const bullet of sampleBullets) {
     const results = await searchQdrantReadOnly(bullet.embedding, 1, {
       userId: bullet.userId.toString(),
+      bulletId: bullet._id.toString(),
     });
 
     if (results && results.length > 0 && results[0].bulletId === bullet._id.toString()) {
@@ -88,6 +91,7 @@ const validate = async () => {
   }
 
   console.log(`Sample validation: ${sampleValid}/${sampleBullets.length} passed`);
+  if (sampleValid !== sampleBullets.length) valid = false;
 
   // Test filtered retrieval
   console.log("\n--- Filtered Retrieval Test ---");
@@ -117,9 +121,10 @@ const validate = async () => {
   console.log("\n=== Validation Complete ===");
 
   await mongoose.disconnect();
+  if (!valid) process.exitCode = 1;
 };
 
-validate().catch((err) => {
-  console.error("Validation failed:", err);
+validate().catch(() => {
+  console.error("Validation failed; check MongoDB and Qdrant connectivity and configuration.");
   process.exit(1);
 });

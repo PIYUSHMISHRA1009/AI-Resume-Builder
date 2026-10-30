@@ -166,7 +166,7 @@ export const deleteVectorsByBulletIds = async (userId, bulletIds) => {
  *
  * @param {Array<number>} queryVector - Query embedding
  * @param {number} topK - Number of results to return
- * @param {Object} filter - Optional payload filters { userId, resumeId, embeddingModel }
+ * @param {Object} filter - Payload filters { userId, resumeId, embeddingModel, bulletId }
  * @returns {Array} Search results with bulletId, text, source, metadata, score
  */
 const queryVectors = async (queryVector, topK = 5, filter = {}) => {
@@ -192,6 +192,13 @@ const queryVectors = async (queryVector, topK = 5, filter = {}) => {
     mustConditions.push({
       key: "embeddingModel",
       match: { value: filter.embeddingModel },
+    });
+  }
+
+  if (filter.bulletId) {
+    mustConditions.push({
+      key: "bulletId",
+      match: { value: filter.bulletId },
     });
   }
 
@@ -248,7 +255,7 @@ export const getCollectionInfo = async () => {
     const qdrant = getClient();
     const info = await qdrant.getCollection(COLLECTION_NAME);
     return info;
-  } catch (error) {
+  } catch {
     return null;
   }
 };

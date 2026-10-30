@@ -88,5 +88,14 @@ describe("installed Qdrant SDK API compatibility", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(new URL(String(fetchMock.mock.calls[0][0])).pathname)
       .toBe("/collections/resume_embeddings/points/query");
+
+    await searchQdrantReadOnly([0.1, 0.2], 1, {
+      userId: "user-1",
+      bulletId: "bullet-1",
+    });
+    expect(queryBody?.filter).toEqual({ must: [
+      { key: "userId", match: { value: "user-1" } },
+      { key: "bulletId", match: { value: "bullet-1" } },
+    ] });
   });
 });
