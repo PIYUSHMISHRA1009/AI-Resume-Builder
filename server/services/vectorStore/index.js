@@ -14,19 +14,10 @@ import {
   getQdrantHealth,
   getQdrantCollectionInfo,
 } from "./qdrantStore.js";
+import { qdrantConfig } from "../../configs/qdrant.js";
 
-const requestedStore = (process.env.VECTOR_STORE || "mongodb").toLowerCase();
-const supportedStores = new Set(["mongodb", "qdrant", "shadow"]);
-
-if (!supportedStores.has(requestedStore)) {
-  console.warn(
-    `[Vector store] Unsupported VECTOR_STORE=${requestedStore}; using mongodb instead.`
-  );
-}
-
-export const VECTOR_STORE = supportedStores.has(requestedStore)
-  ? requestedStore
-  : "mongodb";
+export const VECTOR_STORE = qdrantConfig.mode;
+export { qdrantConfig };
 
 export {
   initQdrant,

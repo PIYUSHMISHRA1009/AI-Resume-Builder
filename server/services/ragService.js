@@ -118,8 +118,8 @@ export const indexResumeBullets = async (resumeId, userId) => {
   if (VECTOR_STORE !== "mongodb" && existingBulletIds.length > 0) {
     try {
       await deleteFromQdrant(existingBulletIds);
-    } catch (qdrantErr) {
-      console.error("[Qdrant] Failed to delete bullets:", qdrantErr.message);
+    } catch {
+      console.warn("[Qdrant] Delete failed; MongoDB remains authoritative.");
     }
   }
 
@@ -151,8 +151,8 @@ export const indexResumeBullets = async (resumeId, userId) => {
           embeddingDimension: doc.embeddingDimension,
           metadata: doc.metadata,
         });
-      } catch (qdrantErr) {
-        console.error("[Qdrant] Failed to upsert bullet:", qdrantErr.message);
+      } catch {
+        console.warn("[Qdrant] Upsert failed; MongoDB remains authoritative.");
         // Continue - MongoDB is source of truth
       }
     }
@@ -247,10 +247,14 @@ export const retrieveBullets = async (userId, jdEmbedding, topK = 5, resumeId = 
       filter.resumeId = resumeId;
     }
 
-    const results = await searchQdrant(jdEmbedding, topK * 2, filter);
-    if (!results || results.length === 0) {
+    let results;
+    try {
+      results = await searchQdrant(jdEmbedding, topK * 2, filter);
+    } catch {
+      console.warn("[Qdrant] Search failed; using MongoDB retrieval.");
       return null;
     }
+    if (!results || results.length === 0) return null;
 
     return results.map((r) => ({
       bulletId: r.bulletId,
@@ -294,22 +298,17 @@ export const retrieveBullets = async (userId, jdEmbedding, topK = 5, resumeId = 
     // Qdrant primary with MongoDB fallback
     rawBullets = await getQdrantRawBullets();
     if (!rawBullets) {
-      console.log("[Qdrant] Primary search failed, falling back to MongoDB");
       rawBullets = await getMongoRawBullets();
     }
   } else if (VECTOR_STORE === "shadow") {
     // Shadow mode: both queried, MongoDB authoritative
-    console.log("[Shadow] Retrieval started");
     const [mongoResults, qdrantResults] = await Promise.all([
       getMongoRawBullets(),
       getQdrantRawBullets(),
     ]);
     rawBullets = mongoResults;
 
-    console.log("[Shadow] MongoDB results:", mongoResults.length);
-    console.log("[Shadow] Qdrant results:", qdrantResults ? qdrantResults.length : 0);
-
-    // Always compute and log shadow comparison, even if Qdrant fails
+    // Compare counts only; never log bullet IDs or payload data.
     const mongoIds = new Set(mongoResults.map(r => r.bulletId.toString()));
     const qdrantIds = qdrantResults
       ? new Set(qdrantResults.map(r => r.bulletId.toString()))
@@ -321,11 +320,7 @@ export const retrieveBullets = async (userId, jdEmbedding, topK = 5, resumeId = 
       qdrantCount: qdrantResults ? qdrantResults.length : 0,
       overlap,
       recall: qdrantIds.size > 0 ? overlap / qdrantIds.size : 0,
-      mongoIds: [...mongoIds],
-      qdrantIds: [...qdrantIds],
     };
-
-    console.log("[Shadow] MongoDB vs Qdrant:", JSON.stringify(shadowComparison));
   } else {
     // MongoDB only (existing behavior)
     rawBullets = await getMongoRawBullets();

@@ -6,10 +6,9 @@
  */
 
 import { QdrantClient } from "@qdrant/js-client-rest";
+import { QDRANT_API_KEY, QDRANT_URL, qdrantConfig } from "../../configs/qdrant.js";
 
-const QDRANT_URL = process.env.QDRANT_URL;
-const QDRANT_API_KEY = process.env.QDRANT_API_KEY;
-const COLLECTION_NAME = process.env.QDRANT_COLLECTION || "resume_embeddings";
+const COLLECTION_NAME = qdrantConfig.collection;
 const VECTOR_SIZE = 3072;
 const DISTANCE = "Cosine";
 

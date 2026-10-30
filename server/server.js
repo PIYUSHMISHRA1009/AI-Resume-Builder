@@ -6,8 +6,8 @@ import { VECTOR_STORE, initQdrant } from "./services/vectorStore/index.js";
 await connectDB();
 
 if (VECTOR_STORE !== "mongodb") {
-  initQdrant().catch((error) => {
-    console.error("[Qdrant] Initialization failed:", error.message);
+  initQdrant().catch(() => {
+    console.warn("[Qdrant] Initialization failed; MongoDB retrieval fallback is active.");
   });
 }
 
