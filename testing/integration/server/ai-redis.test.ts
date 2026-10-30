@@ -17,6 +17,14 @@ vi.mock("@server/configs/ai.js", () => ({
   default: { chat: { completions: { create: mockCompletion } }, embeddings: { create: vi.fn() } },
 }));
 vi.mock("@server/configs/imageKit.js", () => ({ default: { files: { upload: vi.fn() } } }));
+vi.mock("@server/models/User.js", () => ({ default: {} }));
+vi.mock("@server/models/Resume.js", () => ({ default: {} }));
+vi.mock("@server/models/JobDescription.js", () => ({ default: {} }));
+vi.mock("@server/models/ResumeVersion.js", () => ({ default: {} }));
+vi.mock("@server/models/MatchRecord.js", () => ({ default: {} }));
+vi.mock("@server/models/Bullet.js", () => ({ default: {} }));
+vi.mock("@server/models/RAGEvalLog.js", () => ({ default: {} }));
+vi.mock("@server/models/RefinementFeedback.js", () => ({ default: {} }));
 vi.mock("@server/services/ragService.js", () => ({
   tailorResume: vi.fn(),
   indexResumeBullets: vi.fn(),

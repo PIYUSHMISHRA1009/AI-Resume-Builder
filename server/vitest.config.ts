@@ -9,7 +9,11 @@ export default defineConfig({
   root: projectRoot,
   test: {
     environment: 'node',
-    include: ['testing/unit/server/**/*.test.ts', 'testing/integration/server/**/*.test.ts'],
+    include: [
+      'testing/unit/server/**/*.test.ts',
+      'testing/integration/server/ai-app.test.ts',
+      'testing/integration/server/ai-redis.test.ts',
+    ],
     exclude: ['node_modules', 'dist', 'testing/data-generators', 'testing/fixtures', 'client'],
     globals: true,
     setupFiles: ['testing/setup/global-setup.ts'],
