@@ -9,6 +9,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "qdrant:check": "node scripts/qdrant-check.js",
     "test:unit": "vitest run testing/unit/server",
     "test:api": "vitest run testing/integration/server/ai-app.test.ts testing/integration/server/ai-redis.test.ts",
     "test:legacy-integration": "vitest run testing/integration/server/auth.test.ts testing/integration/server/resume-crud.test.ts testing/integration/server/crud-with-generated-dataset.test.ts testing/integration/server/schema-compatibility.test.ts"
