@@ -118,6 +118,13 @@ export const updateResume = async (req, res) => {
             resumeDataCopy=structuredClone(resumeData)
         }
 
+        if (!resumeDataCopy || typeof resumeDataCopy !== "object" || Array.isArray(resumeDataCopy)) {
+            return res.status(400).json({ message: "resumeData is required" });
+        }
+
+        // Ownership comes from the authenticated request and is immutable via resume edits.
+        delete resumeDataCopy.userId;
+
         if (image) {
             try {
                 const imageBufferData = fs.createReadStream(image.path);

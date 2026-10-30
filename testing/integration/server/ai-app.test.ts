@@ -2,8 +2,9 @@ import request from "supertest";
 import jwt from "jsonwebtoken";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
-const { mockResumeFindOne, mockJobDescriptionFindOne } = vi.hoisted(() => ({
+const { mockResumeFindOne, mockResumeFindOneAndUpdate, mockJobDescriptionFindOne } = vi.hoisted(() => ({
   mockResumeFindOne: vi.fn(),
+  mockResumeFindOneAndUpdate: vi.fn(),
   mockJobDescriptionFindOne: vi.fn(),
 }));
 
@@ -13,7 +14,9 @@ vi.mock("@server/configs/ai.js", () => ({
 vi.mock("@server/configs/redis.js", () => ({ getRedis: () => null, warnRedisUnavailable: vi.fn() }));
 vi.mock("@server/configs/imageKit.js", () => ({ default: { files: { upload: vi.fn() } } }));
 vi.mock("@server/models/User.js", () => ({ default: {} }));
-vi.mock("@server/models/Resume.js", () => ({ default: { findOne: mockResumeFindOne } }));
+vi.mock("@server/models/Resume.js", () => ({
+  default: { findOne: mockResumeFindOne, findOneAndUpdate: mockResumeFindOneAndUpdate },
+}));
 vi.mock("@server/models/JobDescription.js", () => ({ default: { findOne: mockJobDescriptionFindOne } }));
 vi.mock("@server/models/ResumeVersion.js", () => ({ default: {} }));
 vi.mock("@server/models/MatchRecord.js", () => ({ default: {} }));
@@ -115,6 +118,24 @@ describe("Express app auth and AI input validation", () => {
     expect(mockJobDescriptionFindOne).toHaveBeenCalledWith({ _id: "job-id", userId });
     mockResumeFindOne.mockReset();
     mockJobDescriptionFindOne.mockReset();
+  });
+
+  it("does not allow resume updates to transfer ownership", async () => {
+    const userId = "resume-owner";
+    mockResumeFindOneAndUpdate.mockResolvedValue({ _id: "resume-id", userId, title: "Updated" });
+
+    const response = await request(app)
+      .put("/api/resumes/update")
+      .set("Authorization", `Bearer ${jwt.sign({ userId }, secret)}`)
+      .send({ resumeId: "resume-id", resumeData: { title: "Updated", userId: "another-user" } });
+
+    expect(response.status).toBe(200);
+    expect(mockResumeFindOneAndUpdate).toHaveBeenCalledWith(
+      { userId, _id: "resume-id" },
+      { $set: { title: "Updated" } },
+      { returnDocument: "after" },
+    );
+    mockResumeFindOneAndUpdate.mockReset();
   });
 
   it("returns 400 when an upload endpoint receives no file", async () => {
