@@ -12,7 +12,6 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import mongoose from "mongoose";
 import Bullet from "../models/Bullet.js";
-import { initQdrant, upsertToQdrant } from "../services/vectorStore/index.js";
 
 const DEFAULT_BATCH_SIZE = 100;
 const MAX_BATCH_SIZE = 500;
@@ -91,6 +90,7 @@ const main = async () => {
       return;
     }
 
+    const { initQdrant, upsertToQdrant } = await import("../services/vectorStore/index.js");
     await initQdrant();
     const cursor = Bullet.find(query).sort({ _id: 1 }).limit(limit || 0).cursor();
     let processed = 0;
