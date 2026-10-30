@@ -36,6 +36,10 @@ cd server && npm run test:api
 # Optional legacy MongoMemoryServer integration suites
 cd server && npm run test:legacy-integration
 
+# Qdrant operations (dry run does not initialize or write to Qdrant)
+cd server && npm run qdrant:check
+cd server && npm run qdrant:migrate -- --dry-run
+
 # Client checks
 cd client && npm run lint
 cd client && npm run build
