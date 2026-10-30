@@ -35,7 +35,7 @@ const Dashboard = () => {
   }, [token])
 
   useEffect(() => {
-    loadAllResumes()
+    queueMicrotask(loadAllResumes)
   }, [loadAllResumes])
 
   const createResume = async (event) => {

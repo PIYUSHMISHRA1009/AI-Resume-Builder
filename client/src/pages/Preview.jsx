@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
-import { dummyResumeData } from '../assets/assets'
 import ResumePreview from '../components/ResumePreview'
 import { ArrowLeft } from 'lucide-react'
 import api from "../configs/api"
@@ -11,7 +10,7 @@ const Preview = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [resumeData, setResumeData] = useState(null)
 
-  const loadResume = async() => {
+  const loadResume = useCallback(async() => {
      console.log("resumeId from URL:", resumeId) 
     try{
       const {data} = await api.get('/api/resumes/public/'+resumeId)
@@ -22,11 +21,11 @@ const Preview = () => {
     }finally{
       setIsLoading(false)
     }
-  }
+  }, [resumeId])
 
   useEffect(() => {
     loadResume()
-  }, [resumeId])
+  }, [loadResume])
 
   // ✅ 1. Loading state
   if (isLoading) {

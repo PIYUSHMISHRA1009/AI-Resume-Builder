@@ -6,7 +6,7 @@ import { Target, CheckCircle2, AlertTriangle, XCircle, Brain, Sparkles, Loader2 
 export default function JDMatchTool({ resumes = [], onMatchComplete }) {
   const [selectedResumeId, setSelectedResumeId] = useState(resumes[0]?._id || "");
   const [jobTitle, setJobTitle] = useState("");
-  const [company, setCompany] = useState("");
+  const [company] = useState("");
   const [category, setCategory] = useState("");
   const [jdText, setJdText] = useState("");
   const [loading, setLoading] = useState(false);

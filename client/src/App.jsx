@@ -1,4 +1,4 @@
-import React,{useEffect} from 'react';
+import React,{useCallback,useEffect} from 'react';
 
 import { Routes, Route } from 'react-router-dom'
 import Home from './pages/Home'
@@ -19,7 +19,7 @@ const App = () => {
 
   const dispatch=useDispatch()
 
-  const getUserData= async()=>{
+  const getUserData= useCallback(async()=>{
     const token=localStorage.getItem('token')
     try{
       if(token){
@@ -38,11 +38,11 @@ const App = () => {
       dispatch(setLoading(false))
       console.log(error.message)
     }
-  }
+  }, [dispatch])
   
   useEffect(()=>{
     getUserData()
-  },[])
+  },[getUserData])
 
   return (
     <>

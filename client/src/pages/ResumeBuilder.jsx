@@ -86,7 +86,7 @@ const ResumeBuilder = () => {
       }
       createNewResume()
     } else if (resumeId) {
-      loadExistingResume(resumeId)
+      queueMicrotask(() => loadExistingResume(resumeId))
     }
   }, [resumeId, token, navigate, loadExistingResume])
 

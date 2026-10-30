@@ -39,7 +39,7 @@ export default function AnalyticsDashboard() {
       // 2. Fetch dashboard analytics metrics
       const analyticsRes = await api.get("/api/analytics/dashboard");
       setDashboardData(analyticsRes.data.analytics);
-    } catch (err) {
+    } catch {
       toast.error("Failed to load analytics dashboard metrics");
     } finally {
       setLoading(false);

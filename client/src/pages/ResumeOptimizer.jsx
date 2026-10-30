@@ -93,7 +93,7 @@ export default function ResumeOptimizer() {
         if (location.state?.category) setCategory(location.state.category);
         if (location.state?.jdText) setJdText(location.state.jdText);
         if (location.state?.jobId) setJobId(location.state.jobId);
-      } catch (err) {
+      } catch {
         toast.error("Failed to load resumes");
       } finally {
         setLoading(false);
