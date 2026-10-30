@@ -29,6 +29,18 @@ vi.mock("@server/services/ragService.js", () => ({
   analyzeSkillGaps: vi.fn(),
   refineBullet: vi.fn(),
 }));
+vi.mock("@server/services/embeddingService.js", () => ({
+  getEmbedding: vi.fn(),
+  cosineSimilarity: vi.fn(() => 0),
+  chunkExperience: vi.fn(() => []),
+}));
+vi.mock("@server/services/vectorStore/index.js", () => ({
+  VECTOR_STORE: "mongodb",
+  initQdrant: vi.fn(),
+  upsertToQdrant: vi.fn(),
+  deleteFromQdrant: vi.fn(),
+  searchQdrant: vi.fn(),
+}));
 vi.mock("@server/services/resumeParserService.js", () => ({ parseResumeTextAndCreate: vi.fn() }));
 vi.mock("@server/services/optimizerService.js", () => ({
   generateOptimizationRecommendations: vi.fn(),
