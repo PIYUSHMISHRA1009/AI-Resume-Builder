@@ -120,8 +120,7 @@ describe("Express app auth and AI input validation", () => {
   it("returns 400 when an upload endpoint receives no file", async () => {
     const response = await request(app)
       .post("/api/optimizer/upload-resume-document")
-      .set("Authorization", `Bearer ${token()}`)
-      .field("title", "Test Resume");
+      .set("Authorization", `Bearer ${token()}`);
 
     expect(response.status).toBe(400);
   });

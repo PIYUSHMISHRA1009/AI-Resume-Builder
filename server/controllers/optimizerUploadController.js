@@ -6,7 +6,7 @@ export const uploadResumeDocument = async (req, res) => {
 
   try {
     const userId = req.userId;
-    const { title } = req.body;
+    const { title } = req.body || {};
     const file = req.file;
 
     if (!file) {
