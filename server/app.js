@@ -35,6 +35,10 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.use((req, _res, next) => {
+  req.body ??= {};
+  next();
+});
 
 app.get("/", (_req, res) => res.send("Server is Live..."));
 

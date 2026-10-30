@@ -77,6 +77,14 @@ describe("Express app auth and AI input validation", () => {
     expect(response.status).toBe(400);
   });
 
+  it("returns 400 for a request with no JSON body", async () => {
+    const response = await request(app)
+      .post("/api/ai/enhance-pro-sum")
+      .set("Authorization", `Bearer ${token()}`);
+
+    expect(response.status).toBe(400);
+  });
+
   it("returns 400 for missing optimizer input", async () => {
     const response = await request(app)
       .post("/api/analytics/optimize")
