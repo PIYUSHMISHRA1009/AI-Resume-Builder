@@ -1,4 +1,5 @@
 import multer from "multer";
+import fs from "node:fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { ALLOWED_RESUME_MIME, ALLOWED_JD_MIME, MAX_FILE_SIZE } from "../utils/documentParser.js";
@@ -8,7 +9,8 @@ const __dirname = path.dirname(__filename);
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
-    cb(null, path.join(__dirname, "../../data/tmp"));
+    const tmpDir = path.join(__dirname, "../../data/tmp");
+    fs.mkdir(tmpDir, { recursive: true }, (error) => cb(error, tmpDir));
   },
   filename: (_req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();

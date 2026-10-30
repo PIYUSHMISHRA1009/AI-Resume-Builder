@@ -1,4 +1,5 @@
 import multer from "multer";
+import fs from "node:fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -15,7 +16,8 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
-    cb(null, path.join(__dirname, "../../data/tmp"));
+    const tmpDir = path.join(__dirname, "../../data/tmp");
+    fs.mkdir(tmpDir, { recursive: true }, (error) => cb(error, tmpDir));
   },
   filename: (_req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
