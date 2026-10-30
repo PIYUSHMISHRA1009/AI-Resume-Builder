@@ -6,6 +6,12 @@
 
 Rather than relying on non-deterministic LLM prompts to generate arbitrary match percentages, the platform uses a programmatic scoring engine paired with an isolated relational analytics database. This dual-database design separates operational document storage from analytical queries, ensuring reproducible calculations, auditability, and structured insights into skill demand trends and version progression.
 
+## Current implementation status
+
+At commit `8909cca`, the repository contains an Express 5 ES-module API, MongoDB operational models, a SQLite analytics read model, and a React 19/Vite client. Routes exist for authentication, owned resume CRUD, AI text enhancement, resume and job-description uploads, matching, analytics, optimization, and RAG operations. These are implemented routes and UI components, not a claim that every external integration has been exercised live.
+
+The `analyze-jd` endpoint and UI are **not implemented**. Match scores are calculated in server code; the configured OpenAI-compatible provider supplies generated text and explanations. Redis and Qdrant are optional integrations. Current test and live-verification evidence appears below.
+
 ---
 
 ## Key Capabilities
@@ -24,10 +30,14 @@ Rather than relying on non-deterministic LLM prompts to generate arbitrary match
 - Interactive bullet refinement using iterative user feedback.
 - RAG evaluation logging tracking retrieval hit-rate, similarity scores, and generation latency.
 
+**Current-status clarification:** The RAG routes and grounding prompts exist, but prompt-injection hardening is unfinished. The wording “grounded strictly” above describes the intended behavior, not a proven security boundary or a claim of live AI verification.
+
 ### 3. Job Description Matching
 - Extraction of structured requirements from target job descriptions: technical skills, soft skills, domain tools, experience years, and education levels.
 - Immediate side-by-side comparison of candidate experience against target role requirements.
 - Automated extraction of explicit job categories (e.g., Business Technology, Data Analytics, Technology Consulting, Software Engineering).
+
+**Current-status clarification:** `POST /api/analytics/jd/parse` stores a supplied `category` or defaults it to `Business Technology`; it does not currently run an automated category classifier. There is no `analyze-jd` route or page.
 
 ### 4. Skill & Evidence Analysis
 - Skill canonicalization dictionary resolving alias variations into standard uppercase entities (e.g., `"Postgres"`, `"PostgreSQL DB"` $\rightarrow$ `"POSTGRESQL"`).
@@ -275,6 +285,21 @@ AI Resume Builder/
 └── package.json                   # Root script runner
 ```
 
+### Current architecture and code map
+
+| Path | Current responsibility |
+| --- | --- |
+| `client/src/App.jsx`, `client/src/pages/`, `client/src/components/` | React routes, resume forms, analytics and optimizer UI. |
+| `client/src/configs/api.js` | Axios API client; attaches the saved JWT to requests. |
+| `server/app.js`, `server/server.js` | Express app setup and route mounting; MongoDB connection and port 3000 listener. |
+| `server/routes/`, `server/controllers/`, `server/middlewares/` | Authenticated HTTP routes, input handling, ownership checks, and per-user AI rate limiting. |
+| `server/models/`, `server/services/analyticsSyncService.js`, `server/services/sqlAnalyticsService.js` | MongoDB records and the SQLite analytics projection/query layer. |
+| `server/services/embeddingService.js`, `server/services/ragService.js`, `server/services/vectorStore/` | Embedding requests, retrieval, and optional Qdrant adapter with MongoDB fallback. |
+| `server/configs/redis.js`, `server/utils/aiCache.js` | Optional Redis connection and response caching. |
+| `testing/unit/server/`, `testing/integration/server/`, `client/src/*.test.*` | Current Vitest tests; older standalone scripts also remain under `server/tests/`. |
+
+**Current-status clarification:** The active default server suite is under `testing/`; the `server/tests/` directory shown above contains older standalone scripts. The LLM client supports the configured `OPENAI_BASE_URL`; it is not limited to one provider. See [AGENTS.md](AGENTS.md) for AI-agent development rules and the fuller repository map.
+
 ---
 
 ## Running Locally
@@ -283,6 +308,8 @@ AI Resume Builder/
 - Node.js >= 20
 - MongoDB instance (local or MongoDB Atlas)
 - OpenAI API key
+
+**Current-status clarification:** CI and the recorded local checks use Node.js 22. The `>= 20` prerequisite above has not been separately verified across every supported version. An AI provider key is needed for live AI calls, not for the mocked default tests.
 
 ### 1. Environment Configuration
 
@@ -315,6 +342,8 @@ node scripts/seedAnalyticsData.js
 npm run server
 ```
 
+**Current-status clarification:** `node scripts/seedAnalyticsData.js` writes synthetic demo data and is optional; do not run it when only installing, starting, or checking existing data. The standard server script is `npm start` in `server/` (port `3000` by default). `npm run server` uses nodemon; there is no server `dev` script.
+
 ### 3. Frontend Setup
 
 ```bash
@@ -322,6 +351,38 @@ cd client
 npm ci
 npm run dev
 ```
+
+### Exact install, configuration, and run commands
+
+From the repository root, use Node.js 22 and two terminals:
+
+```sh
+npm --prefix "server" ci
+npm --prefix "client" ci
+```
+
+Set server configuration in `server/.env` and the client API origin in `client/.env`. Use your own values locally; commit neither file. The existing examples above contain placeholders, not usable credentials. The variable names are:
+
+| Variable | Purpose |
+| --- | --- |
+| `PORT`, `CLIENT_URL` | Server listener (`3000` by default) and additional allowed browser origin. |
+| `MONGODB_URI`, `MONGODB_SERVER_SELECTION_TIMEOUT_MS` | Operational MongoDB connection and selection timeout; the server has a local MongoDB fallback. The live Qdrant validator requires `MONGODB_URI`. |
+| `JWT_SECRET`, `VITE_BASE_URL` | JWT signing secret on the server and the client API base URL. |
+| `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL`, `IMAGEKIT_PRIVATE_KEY` | OpenAI-compatible text/embedding provider and optional ImageKit image upload. |
+| `EMBEDDING_MODEL`, `EMBEDDING_DIMENSIONS` | Embedding model and vector length; defaults in code are `gemini-embedding-2` and `3072`. |
+| `VECTOR_STORE`, `QDRANT_URL`, `QDRANT_API_KEY`, `QDRANT_COLLECTION` | Retrieval mode and optional Qdrant endpoint, key, and collection. |
+| `REDIS_URL`, `AI_RATE_LIMIT_MAX`, `AI_RATE_LIMIT_WINDOW_SECONDS`, `AI_CACHE_TTL_SECONDS` | Optional Redis connection and the limits/cache lifetime described below. |
+| `RAG_TOP_K`, `RAG_SIMILARITY_THRESHOLD`, `RAG_LOG_EVAL`, `RAG_VECTOR_SEARCH_INDEX`, `RAG_SKILL_GAP_THRESHOLD` | Retrieval, evaluation, vector-search index, and skill-gap settings. |
+
+```sh
+npm --prefix "server" start
+```
+
+```sh
+npm --prefix "client" run dev
+```
+
+The root `npm start` forwards to the server; root `npm run dev` starts only the client. If using an absolute checkout path containing spaces, quote it as one argument, for example `cd "/path/to/AI Resume Builder"`; quote shell glob patterns as well.
 
 ---
 
@@ -336,6 +397,21 @@ npm test
 ```
 
 The older MongoMemoryServer suites are opt-in: `npm run test:legacy-integration`.
+
+### Testing and verification recorded at `8909cca`
+
+From the repository root, these commands match the package scripts and CI jobs:
+
+```sh
+npm --prefix "server" test
+npm --prefix "client" test
+npm --prefix "client" run lint
+npm --prefix "client" run build
+```
+
+At commit `8909cca`, the server suite passed **94/94** tests, the client suite passed **4/4** tests, client lint passed, and the client production build passed. The build reported outdated Browserslist data and a chunk larger than 500 kB. Both package lockfiles also completed `npm ci` in an isolated no-space working copy on macOS Node 22.
+
+The default server suite uses deterministic unit tests and mocked HTTP tests; it does not call live AI, MongoDB, Qdrant, or Redis services. The Qdrant SDK compatibility test uses the installed SDK against mocked HTTP. The four client tests cover the API auth header and login form; they are not broad frontend coverage. The GitHub Actions workflow installs dependencies, runs server tests, then runs client lint, tests, and build. **CI for exact commit `8909cca` has not been verified here.** Live Redis, live AI, browser E2E, and the opt-in legacy MongoMemoryServer suites were **not run**. Root `npm run test:all` adds Playwright E2E tests; it was not part of the reported pass count.
 
 ## Qdrant vector store
 
@@ -370,6 +446,23 @@ For an explicitly authorized real backfill, `--batch-size`, `--limit`, `--after-
 
 Qdrant tests mock the client with `vi.mock`; they do not use live Qdrant, MongoDB, or embedding services. If a Qdrant key is exposed, rotate it in the Qdrant console, update `server/.env` locally and the host's environment variables, and never commit the key.
 
+**Current-status clarification:** Most Qdrant tests mock the client, but `testing/unit/server/qdrant-sdk-api.test.ts` exercises installed `@qdrant/js-client-rest` 1.19.0 with mocked HTTP. The adapter calls `query()` (the installed SDK has no `search()` method) and maps `result.points` to `{ bulletId, text, source, metadata, score }`. Every search requires `userId`; deletes filter by `userId` and bullet IDs. `shadow` mode returns MongoDB results while comparing Qdrant, and `qdrant` mode falls back to MongoDB on retrieval errors.
+
+### Current Qdrant configuration, migration, and read-only validation
+
+The embedding model and vector dimensions must match the stored MongoDB bullets and Qdrant collection. Code defaults are `EMBEDDING_MODEL=gemini-embedding-2` and `EMBEDDING_DIMENSIONS=3072`; changing either setting does not convert existing vectors. The collection uses cosine distance. A collection dimension or distance mismatch blocks Qdrant retrieval and leaves MongoDB as fallback. `QDRANT_COLLECTION` defaults to `resume_embeddings`; `mongodb` is the default `VECTOR_STORE` mode and needs no Qdrant credentials.
+
+The reported existing backfill is **complete**: 98 processed, 0 failed, and 0 remaining eligible. Do **not** rerun it for validation, regenerate embeddings, delete points, or recreate the collection. A real backfill writes to Qdrant and can incur service costs. This script copies existing embeddings; a separate regeneration step, if ever needed, may incur embedding-provider charges.
+
+For read-only checks, from the repository root run:
+
+```sh
+(cd "server" && npm run qdrant:check)
+(cd "server" && node scripts/validateQdrantMigration.js)
+```
+
+The validator requires configured MongoDB and Qdrant access. It compares eligible MongoDB vectors with Qdrant points, checks five sampled points using each record's `userId` and `bulletId`, and reports user-filtered retrieval overlap; it does not bootstrap the collection or write points. The last reported **live read-only** result at `8909cca` was **98/98** counts, **5/5** sampled points, and **5/5** filtered overlap. These live results are separate from the mocked test suite. If planning a future migration, `cd "server" && npm run qdrant:migrate -- --dry-run` counts eligible bullets without writing or generating embeddings; a real backfill requires a separate, explicit decision.
+
 ## Redis (optional)
 
 Redis provides per-user rate limiting for AI routes and response caching for professional-summary and job-description text enhancement. Redis is off unless `REDIS_URL` is set. Rate limiting and caching fail open if Redis is unavailable, so requests continue without Redis. Start a local Redis instance with:
@@ -379,6 +472,12 @@ docker run -p 6379:6379 redis:7
 ```
 
 Then set `REDIS_URL=redis://127.0.0.1:6379` in `server/.env`. Resume uploads and parsing are rate limited but are not cached.
+
+### Current Redis rate-limit and cache behavior
+
+After authentication, every `/api/ai/*` route, `POST /api/analytics/optimize`, and both `/api/optimizer/*` upload routes use a per-user fixed-window limiter. Defaults are **20 requests per 3600 seconds** (`AI_RATE_LIMIT_MAX`, `AI_RATE_LIMIT_WINDOW_SECONDS`). Responses set `X-RateLimit-Limit` and `X-RateLimit-Remaining`; a request above the limit receives HTTP **429** and `Retry-After` based on the Redis key TTL. If `REDIS_URL` is unset, Redis connection fails, or a Redis command times out/fails, limiting fails open so the request continues. Failure logs contain metadata, not request content.
+
+Only `POST /api/ai/enhance-pro-sum` and `POST /api/ai/enhance-job-desc` cache successful computed text responses. The cache key is a SHA-256 digest of endpoint, user ID, and normalized input; default TTL is **86400 seconds** (`AI_CACHE_TTL_SECONDS`). These responses set `X-Cache: HIT`, `MISS`, or `BYPASS`. Other uploads, parsing, optimization, RAG, and database-writing routes are not response cached. On a Redis cache failure, the handler computes the response and reports `BYPASS`. Tests exercise these paths with mocked Redis; live Redis `MISS`/`HIT`/`BYPASS` behavior remains unverified. No hosted Redis deployment is established by this README.
 
 ---
 
@@ -397,6 +496,14 @@ Then set `REDIS_URL=redis://127.0.0.1:6379` in `server/.env`. Resume uploads and
 2. **Heuristic Evidence Classifier:** Narrative evidence classification uses regex heuristics; action verb matching (e.g. *"built"*) triggers `Strong` strength regardless of full sentence syntax.
 3. **Read-Model Deletion Sync:** Operational MongoDB deletions do not currently issue explicit `DELETE FROM` statements in SQLite; historical match snapshots are preserved in the read-model.
 
+### Current known limitations and remaining work
+
+- The `analyze-jd` endpoint and UI are unfinished. Do not treat the existing JD parse/match routes as that feature.
+- Prompt-injection hardening for resume and job-description text is incomplete. JWTs are stored in client `localStorage`; document upload checks use reported MIME types rather than file signatures.
+- The tested client surface is limited to auth headers and login form behavior. Browser E2E, legacy MongoMemoryServer suites, live AI, and live Redis were not run for the recorded verification; CI for the exact commit is unverified here.
+- The last `npm ci` audit summaries reported **15 server** and **31 client** dependency advisories on 2026-10-30. No dependency changes or audit fixes are part of this documentation update.
+- Next steps include validating live Redis behavior with safe fixtures, broadening client navigation/form tests, reviewing dependency advisories, and hardening file and prompt input handling. The recorded checks do not establish production readiness.
+
 ---
 
 ## Future Improvements
@@ -412,3 +519,5 @@ Then set `REDIS_URL=redis://127.0.0.1:6379` in `server/.env`. Resume uploads and
 ## License
 
 This project is open source and available under the [MIT License](LICENSE).
+
+**Current-status clarification:** No tracked `LICENSE` file was found at the root during this README update, so the existing link above is unresolved. Confirm and add the intended license file separately before relying on that statement.
