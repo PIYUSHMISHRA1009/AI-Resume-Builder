@@ -68,8 +68,8 @@ describe("installed Qdrant SDK API compatibility", () => {
     vi.stubGlobal("fetch", fetchMock);
     vi.spyOn(console, "log").mockImplementation(() => {});
 
-    const { searchQdrant } = await import("../../../server/services/vectorStore/qdrantStore.js");
-    const results = await searchQdrant([0.1, 0.2], 3, { userId: "user-1" });
+    const { searchQdrantReadOnly } = await import("../../../server/services/vectorStore/qdrantStore.js");
+    const results = await searchQdrantReadOnly([0.1, 0.2], 3, { userId: "user-1" });
 
     expect(results).toEqual([{
       bulletId: "bullet-1",
@@ -85,6 +85,8 @@ describe("installed Qdrant SDK API compatibility", () => {
       with_vector: false,
       filter: { must: [{ key: "userId", match: { value: "user-1" } }] },
     }));
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(new URL(String(fetchMock.mock.calls[0][0])).pathname)
+      .toBe("/collections/resume_embeddings/points/query");
   });
 });

@@ -169,11 +169,8 @@ export const deleteVectorsByBulletIds = async (userId, bulletIds) => {
  * @param {Object} filter - Optional payload filters { userId, resumeId, embeddingModel }
  * @returns {Array} Search results with bulletId, text, source, metadata, score
  */
-export const searchVectors = async (queryVector, topK = 5, filter = {}) => {
+const queryVectors = async (queryVector, topK = 5, filter = {}) => {
   if (!filter.userId) throw new Error("Qdrant searches require a userId filter");
-  if (!isInitialized) {
-    await initializeCollection();
-  }
 
   const qdrant = getClient();
 
@@ -220,6 +217,16 @@ export const searchVectors = async (queryVector, topK = 5, filter = {}) => {
   }));
 };
 
+export const searchVectors = async (queryVector, topK = 5, filter = {}) => {
+  if (!isInitialized) {
+    await initializeCollection();
+  }
+  return queryVectors(queryVector, topK, filter);
+};
+
+// Read-only query entry point for validators; it never creates collections or indexes.
+export const searchVectorsReadOnly = queryVectors;
+
 /**
  * Health check for Qdrant connectivity.
  */
@@ -257,5 +264,6 @@ export const upsertToQdrant = async (bulletId, vector, payload = {}) => {
 export const initQdrant = initializeCollection;
 export const deleteFromQdrant = deleteVectorsByBulletIds;
 export const searchQdrant = searchVectors;
+export const searchQdrantReadOnly = searchVectorsReadOnly;
 export const getQdrantHealth = healthCheck;
 export const getQdrantCollectionInfo = getCollectionInfo;

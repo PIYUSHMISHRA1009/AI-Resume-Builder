@@ -11,6 +11,7 @@ import {
   upsertToQdrant,
   deleteFromQdrant,
   searchQdrant,
+  searchQdrantReadOnly,
   getQdrantHealth,
   getQdrantCollectionInfo,
 } from "./qdrantStore.js";
@@ -24,6 +25,7 @@ export {
   upsertToQdrant,
   deleteFromQdrant,
   searchQdrant,
+  searchQdrantReadOnly,
   getQdrantHealth,
   getQdrantCollectionInfo,
 };

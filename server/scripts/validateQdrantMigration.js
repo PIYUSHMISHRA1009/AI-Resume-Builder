@@ -12,9 +12,8 @@ import "dotenv/config";
 import mongoose from "mongoose";
 import Bullet from "../models/Bullet.js";
 import {
-  initQdrant,
   getQdrantCollectionInfo,
-  searchQdrant,
+  searchQdrantReadOnly,
   getQdrantHealth,
 } from "../services/vectorStore/index.js";
 
@@ -40,8 +39,8 @@ const validate = async () => {
   });
   console.log(`MongoDB eligible vectors: ${mongoCount}`);
 
-  // Initialize Qdrant
-  console.log("\nInitializing Qdrant...");
+  // Check Qdrant without creating collections or indexes.
+  console.log("\nChecking Qdrant...");
   const qdrantHealth = await getQdrantHealth();
   console.log(`Qdrant health: ${qdrantHealth.status}`);
 
@@ -50,8 +49,6 @@ const validate = async () => {
     await mongoose.disconnect();
     process.exit(1);
   }
-
-  await initQdrant();
 
   const collectionInfo = await getQdrantCollectionInfo();
   if (!collectionInfo) {
@@ -81,7 +78,7 @@ const validate = async () => {
 
   let sampleValid = 0;
   for (const bullet of sampleBullets) {
-    const results = await searchQdrant(bullet.embedding, 1, {
+    const results = await searchQdrantReadOnly(bullet.embedding, 1, {
       userId: bullet.userId.toString(),
     });
 
@@ -102,7 +99,7 @@ const validate = async () => {
       embeddingModel: testBullet.embeddingModel,
     }).limit(5);
 
-    const qdrantFiltered = await searchQdrant(testBullet.embedding, 5, {
+    const qdrantFiltered = await searchQdrantReadOnly(testBullet.embedding, 5, {
       userId: testBullet.userId.toString(),
       resumeId: testBullet.resumeId.toString(),
       embeddingModel: testBullet.embeddingModel,
