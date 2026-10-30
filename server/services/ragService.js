@@ -20,13 +20,6 @@ const SIMILARITY_THRESHOLD = parseFloat(
 );
 const LOG_EVAL = process.env.RAG_LOG_EVAL !== "false";
 
-// Initialize Qdrant collection if Qdrant mode is active
-if (VECTOR_STORE !== "mongodb") {
-  initQdrant().catch((err) => {
-    console.error("[Qdrant] Initialization failed:", err.message);
-  });
-}
-
 /**
  * Extract text chunks from a Resume document into bullet candidates.
  * Each skill, experience line, project, and summary becomes one bullet.
