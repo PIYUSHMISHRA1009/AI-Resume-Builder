@@ -114,6 +114,19 @@ describe("Qdrant config and store safety", () => {
     expect(warning).toHaveBeenCalledTimes(1);
   });
 
+  it("falls back to mongodb for an invalid Qdrant URL without logging its value", async () => {
+    const invalidUrl = "not-a-valid-qdrant-url";
+    vi.stubEnv("QDRANT_URL", invalidUrl);
+    const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const store = await import("../../../server/services/vectorStore/index.js");
+
+    expect(store.VECTOR_STORE).toBe("mongodb");
+    expect(warning).toHaveBeenCalledTimes(1);
+    expect(warning.mock.calls.flat().join(" ")).toContain("QDRANT_URL");
+    expect(warning.mock.calls.flat().join(" ")).not.toContain(invalidUrl);
+  });
+
   it("includes userId in every search and delete filter", async () => {
     const store = await import("../../../server/services/vectorStore/index.js");
     await store.initQdrant();
