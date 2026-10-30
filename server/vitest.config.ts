@@ -16,7 +16,6 @@ export default defineConfig({
     ],
     exclude: ['node_modules', 'dist', 'testing/data-generators', 'testing/fixtures', 'client'],
     globals: true,
-    setupFiles: ['testing/setup/global-setup.ts'],
     testTimeout: 60000,
     hookTimeout: 60000,
     pool: 'threads',
