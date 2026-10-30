@@ -7,11 +7,25 @@ import RAGEvalLog from "../models/RAGEvalLog.js";
 import RefinementFeedback from "../models/RefinementFeedback.js";
 import Resume from "../models/Resume.js";
 import { fileURLToPath } from "url";
+import {
+  VECTOR_STORE,
+  initQdrant,
+  upsertToQdrant,
+  deleteFromQdrant,
+  searchQdrant,
+} from "./vectorStore/index.js";
 
 const SIMILARITY_THRESHOLD = parseFloat(
   process.env.RAG_SIMILARITY_THRESHOLD || "0.3"
 );
 const LOG_EVAL = process.env.RAG_LOG_EVAL !== "false";
+
+// Initialize Qdrant collection if Qdrant mode is active
+if (VECTOR_STORE !== "mongodb") {
+  initQdrant().catch((err) => {
+    console.error("[Qdrant] Initialization failed:", err.message);
+  });
+}
 
 /**
  * Extract text chunks from a Resume document into bullet candidates.
@@ -92,8 +106,29 @@ export const indexResumeBullets = async (resumeId, userId) => {
     throw new Error("Resume not found");
   }
 
+  // Get existing bullet IDs before deletion for Qdrant cleanup
+  let existingBulletIds = [];
+  if (VECTOR_STORE !== "mongodb") {
+    try {
+      existingBulletIds = await Bullet.find({ resumeId: resume._id })
+        .distinct("_id")
+        .then(ids => ids.map(id => id.toString()));
+    } catch (err) {
+      console.error("[Qdrant] Failed to get existing bullet IDs:", err.message);
+    }
+  }
+
   // Clear previous bullets for this resume (re-index is idempotent)
   await Bullet.deleteMany({ resumeId: resume._id });
+
+  // Also delete from Qdrant if enabled
+  if (VECTOR_STORE !== "mongodb" && existingBulletIds.length > 0) {
+    try {
+      await deleteFromQdrant(existingBulletIds);
+    } catch (qdrantErr) {
+      console.error("[Qdrant] Failed to delete bullets:", qdrantErr.message);
+    }
+  }
 
   const bulletCandidates = extractBulletsFromResume(resume);
   const created = [];
@@ -110,6 +145,25 @@ export const indexResumeBullets = async (resumeId, userId) => {
       embeddingModel: process.env.EMBEDDING_MODEL,
       embeddingDimension: embedding.length,
     });
+
+    // Dual-write to Qdrant if enabled
+    if (VECTOR_STORE !== "mongodb") {
+      try {
+        await upsertToQdrant(doc._id.toString(), embedding, {
+          userId: doc.userId.toString(),
+          resumeId: doc.resumeId.toString(),
+          text: doc.text,
+          source: doc.source,
+          embeddingModel: doc.embeddingModel,
+          embeddingDimension: doc.embeddingDimension,
+          metadata: doc.metadata,
+        });
+      } catch (qdrantErr) {
+        console.error("[Qdrant] Failed to upsert bullet:", qdrantErr.message);
+        // Continue - MongoDB is source of truth
+      }
+    }
+
     created.push(doc);
   }
 
@@ -118,13 +172,15 @@ export const indexResumeBullets = async (resumeId, userId) => {
 
 /**
  * Retrieve top-k relevant bullets for a JD embedding.
- * Uses Atlas Vector Search ($vectorSearch) when an index is configured;
- * falls back to in-memory cosine similarity if the index is missing or
- * the server isn't Atlas.
+ *
+ * VECTOR_STORE modes:
+ * - "qdrant": Qdrant primary, MongoDB fallback
+ * - "shadow": Both queried, MongoDB authoritative
+ * - "mongodb": Existing behavior only
  */
 export const retrieveBullets = async (userId, jdEmbedding, topK = 5, resumeId = null) => {
-  // Helper to get raw bullet scores (without feedback boost)
-  const getRawBullets = async () => {
+  // Helper to get raw bullet scores from MongoDB (existing logic)
+  const getMongoRawBullets = async () => {
     const userIdObj = new mongoose.Types.ObjectId(userId);
     const currentEmbeddingModel = process.env.EMBEDDING_MODEL || "gemini-embedding-2";
     const vectorFilter = { userId: userIdObj, embeddingModel: currentEmbeddingModel };
@@ -188,6 +244,30 @@ export const retrieveBullets = async (userId, jdEmbedding, topK = 5, resumeId = 
     }));
   };
 
+  // Helper to get raw bullets from Qdrant
+  const getQdrantRawBullets = async () => {
+    const filter = {
+      userId,
+      embeddingModel: process.env.EMBEDDING_MODEL || "gemini-embedding-2",
+    };
+    if (resumeId) {
+      filter.resumeId = resumeId;
+    }
+
+    const results = await searchQdrant(jdEmbedding, topK * 2, filter);
+    if (!results || results.length === 0) {
+      return null;
+    }
+
+    return results.map((r) => ({
+      bulletId: r.bulletId,
+      text: r.text,
+      source: r.source,
+      metadata: r.metadata,
+      score: r.score || 0,
+    }));
+  };
+
   // Apply feedback boost to raw bullets
   const applyFeedbackBoost = async (rawBullets) => {
     if (rawBullets.length === 0) return rawBullets;
@@ -213,10 +293,63 @@ export const retrieveBullets = async (userId, jdEmbedding, topK = 5, resumeId = 
     });
   };
 
-  // Get raw bullets, apply boost, sort, and limit to topK
-  const rawBullets = await getRawBullets();
+  // Main retrieval logic based on VECTOR_STORE mode
+  let rawBullets;
+  let shadowComparison = null;
+
+  if (VECTOR_STORE === "qdrant") {
+    // Qdrant primary with MongoDB fallback
+    rawBullets = await getQdrantRawBullets();
+    if (!rawBullets) {
+      console.log("[Qdrant] Primary search failed, falling back to MongoDB");
+      rawBullets = await getMongoRawBullets();
+    }
+  } else if (VECTOR_STORE === "shadow") {
+    // Shadow mode: both queried, MongoDB authoritative
+    console.log("[Shadow] Retrieval started");
+    const [mongoResults, qdrantResults] = await Promise.all([
+      getMongoRawBullets(),
+      getQdrantRawBullets(),
+    ]);
+    rawBullets = mongoResults;
+
+    console.log("[Shadow] MongoDB results:", mongoResults.length);
+    console.log("[Shadow] Qdrant results:", qdrantResults ? qdrantResults.length : 0);
+
+    // Always compute and log shadow comparison, even if Qdrant fails
+    const mongoIds = new Set(mongoResults.map(r => r.bulletId.toString()));
+    const qdrantIds = qdrantResults
+      ? new Set(qdrantResults.map(r => r.bulletId.toString()))
+      : new Set();
+    const overlap = [...qdrantIds].filter(id => mongoIds.has(id)).length;
+
+    shadowComparison = {
+      mongoCount: mongoResults.length,
+      qdrantCount: qdrantResults ? qdrantResults.length : 0,
+      overlap,
+      recall: qdrantIds.size > 0 ? overlap / qdrantIds.size : 0,
+      mongoIds: [...mongoIds],
+      qdrantIds: [...qdrantIds],
+    };
+
+    console.log("[Shadow] MongoDB vs Qdrant:", JSON.stringify(shadowComparison));
+  } else {
+    // MongoDB only (existing behavior)
+    rawBullets = await getMongoRawBullets();
+  }
+
+  // Apply feedback boost, sort, and limit to topK
   const boostedBullets = await applyFeedbackBoost(rawBullets);
   boostedBullets.sort((a, b) => b.score - a.score);
+
+  // In shadow mode, attach comparison data for logging
+  if (VECTOR_STORE === "shadow" && shadowComparison) {
+    return {
+      bullets: boostedBullets.slice(0, topK),
+      shadow: shadowComparison,
+    };
+  }
+
   return boostedBullets.slice(0, topK);
 };
 
@@ -264,7 +397,16 @@ export const tailorResume = async (userId, jdText, resumeId = null, topK = 5) =>
   const jdEmbedding = await getEmbedding(jdText);
 
   // [2] Retrieve top-k relevant bullets from the user's corpus
-  const retrieved = await retrieveBullets(userId, jdEmbedding, topK, resumeId);
+  const retrievedResult = await retrieveBullets(userId, jdEmbedding, topK, resumeId);
+
+  // Handle shadow mode response format
+  let retrieved;
+  if (VECTOR_STORE === "shadow" && retrievedResult.shadow) {
+    retrieved = retrievedResult.bullets;
+    console.log("[Shadow] Retrieval comparison:", JSON.stringify(retrievedResult.shadow));
+  } else {
+    retrieved = retrievedResult;
+  }
 
   // [3] Build the grounded prompt
   const messages = buildRAGPrompt(jdText, retrieved);

@@ -43,7 +43,7 @@ export default function JDMatchTool({ resumes = [], onMatchComplete }) {
 
       setMatchData(matchRes.data);
       toast.success("Candidate-JD Match Score calculated!");
-      if (onMatchComplete) onMatchComplete();
+      if (onMatchComplete) onMatchComplete(matchRes.data);
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to calculate match score");
     } finally {

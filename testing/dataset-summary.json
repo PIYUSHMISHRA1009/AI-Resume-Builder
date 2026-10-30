@@ -1,0 +1,120 @@
+{
+  "phase": "C",
+  "generator": "testing/data-generators/generate-resumes.ts",
+  "cli": "testing/data-generators/cli.ts",
+  "seed": 42,
+  "recordCount": 1000,
+  "invalidRecordCount": 10,
+  "generatedAt": "2026-10-11T01:17:00Z",
+  "validResumesFile": "testing/fixtures/generated/resumes-42.json",
+  "invalidResumesFile": "testing/fixtures/generated/invalid-resumes.json",
+  "indexFile": "testing/fixtures/generated/index.json",
+  "uniqueness": {
+    "uniqueSeeds": 1000,
+    "uniqueEmails": 1000,
+    "uniqueNameEmailCombos": 1000,
+    "distinctInvalidReasons": 10
+  },
+  "diversity": {
+    "professions": {
+      "count": 5,
+      "distribution": {
+        "DevOps Engineer": 209,
+        "Product Manager": 215,
+        "UX/UI Designer": 216,
+        "Frontend Engineer": 215,
+        "Backend Engineer": 145
+      }
+    },
+    "experienceLevels": {
+      "count": 5,
+      "distribution": {
+        "Intern": 200,
+        "Junior": 198,
+        "Mid": 198,
+        "Senior": 201,
+        "Staff/Principal": 203
+      }
+    },
+    "industries": {
+      "count": 9,
+      "distribution": {
+        "Enterprise": 173,
+        "Fintech": 175,
+        "Crypto": 66,
+        "Gaming": 64,
+        "SaaS": 173,
+        "EdTech": 37,
+        "E-commerce": 135,
+        "HealthTech": 106,
+        "Consumer Tech": 71
+      }
+    },
+    "educationLevels": {
+      "count": 6,
+      "distribution": {
+        "MS": 181,
+        "BS": 152,
+        "Bootcamp": 181,
+        "Self-taught": 152,
+        "Associate": 182,
+        "PhD": 152
+      }
+    },
+    "skillProfiles": {
+      "count": 4,
+      "distribution": {
+        "generalist": 210,
+        "specialist": 195,
+        "polyglot": 333,
+        "legacy-to-modern": 262
+      }
+    },
+    "completenessLevels": {
+      "count": 5,
+      "distribution": {
+        "complete": 200,
+        "no-summary": 201,
+        "no-projects": 200,
+        "minimal": 201,
+        "no-education": 198
+      }
+    }
+  },
+  "schemaValidation": {
+    "allRequiredFieldsPresent": true,
+    "templateValuesValid": true,
+    "accentColorFormatValid": true,
+    "booleanPublicField": true,
+    "dateFormatsValid": true,
+    "emailFormatValid": true
+  },
+  "deterministicVerification": {
+    "sameSeedProducesIdenticalOutput": true,
+    "differentSeedsProduceDifferentOutput": true,
+    "sequentialSeedsProduceUniqueResumes": true,
+    "largeSeedValuesWork": true,
+    "negativeSeedValuesWork": true
+  },
+  "testResults": {
+    "generatorTests": { "total": 43, "passed": 43, "failed": 0 },
+    "unitTests": { "total": 61, "passed": 61, "failed": 0 },
+    "integrationTests": { "total": 23, "passed": 23, "failed": 0 },
+    "originalRagTests": { "total": 3, "passed": 3, "failed": 0 },
+    "originalNextLevelTests": { "total": 3, "passed": 3, "failed": 0 },
+    "originalAnalyticsTests": { "total": 4, "passed": 4, "failed": 0 },
+    "clientBuild": { "success": true, "buildTimeMs": 1870 }
+  },
+  "invalidTestCases": [
+    "empty-object",
+    "missing-required-fields",
+    "invalid-email",
+    "malformed-dates",
+    "empty-arrays",
+    "unicode-stress",
+    "extremely-long-text",
+    "null-values",
+    "negative-experience",
+    "duplicate-skills"
+  ]
+}

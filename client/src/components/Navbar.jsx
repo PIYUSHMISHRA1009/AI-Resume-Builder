@@ -1,7 +1,7 @@
 import React from 'react'
 import {Link,useNavigate} from 'react-router-dom'
 import {useSelector,useDispatch} from 'react-redux'
-import { BarChart2, FileText } from 'lucide-react'
+import { BarChart2, FileText, Wand2 } from 'lucide-react'
 
 
 const Navbar=()=>{
@@ -29,6 +29,9 @@ const Navbar=()=>{
                             </Link>
                             <Link to="/app/analytics" className="hover:text-blue-600 flex items-center gap-1.5 font-semibold text-blue-600 transition">
                                 <BarChart2 className="w-4 h-4" /> Career Analytics
+                            </Link>
+                            <Link to="/app/resume-optimizer" className="hover:text-blue-600 flex items-center gap-1.5 transition">
+                                <Wand2 className="w-4 h-4" /> Resume Optimizer
                             </Link>
                         </div>
                     )}

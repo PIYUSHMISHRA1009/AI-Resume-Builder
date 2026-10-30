@@ -6,6 +6,8 @@ import userRouter from "./routes/UserRoutes.js";
 import aiRouter from "./routes/aiRoutes.js";
 import resumeRouter from "./routes/resumeRoutes.js";
 import analyticsRouter from "./routes/analyticsRoutes.js";
+import optimizerRouter from "./routes/optimizerRoutes.js";
+import optimizerUploadRouter from "./routes/optimizerUploadRoutes.js";
 
 await connectDB()
 
@@ -44,6 +46,8 @@ app.use('/api/users', userRouter);
 app.use('/api/ai', aiRouter);
 app.use('/api/resumes', resumeRouter);
 app.use('/api/analytics', analyticsRouter);
+app.use('/api/analytics', optimizerRouter);
+app.use('/api/optimizer', optimizerUploadRouter);
 
 app.listen(PORT, () => {
     console.log(`Server is Running on Port ${PORT}`);

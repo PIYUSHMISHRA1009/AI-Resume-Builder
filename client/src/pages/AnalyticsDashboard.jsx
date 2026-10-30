@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../configs/api";
 import { toast } from "react-hot-toast";
 import JDMatchTool from "../components/JDMatchTool";
@@ -12,14 +13,17 @@ import {
   CheckCircle,
   HelpCircle,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 
 export default function AnalyticsDashboard() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [resumes, setResumes] = useState([]);
   const [dashboardData, setDashboardData] = useState(null);
   const [selectedResumeId, setSelectedResumeId] = useState("");
   const [versionProgression, setVersionProgression] = useState([]);
+  const [lastMatchData, setLastMatchData] = useState(null);
 
   const fetchDashboardData = async () => {
     try {
@@ -50,6 +54,11 @@ export default function AnalyticsDashboard() {
     } catch (err) {
       console.error("Failed to fetch version progression:", err);
     }
+  };
+
+  const handleMatchComplete = (matchData) => {
+    setLastMatchData(matchData);
+    fetchDashboardData();
   };
 
   useEffect(() => {
@@ -135,7 +144,36 @@ export default function AnalyticsDashboard() {
         </div>
 
         {/* JD Match Tool Section */}
-        <JDMatchTool resumes={resumes} onMatchComplete={fetchDashboardData} />
+        <JDMatchTool resumes={resumes} onMatchComplete={handleMatchComplete} />
+
+        {/* Optimizer CTA */}
+        {lastMatchData && (
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+              <h3 className="text-base font-bold text-slate-800">Optimize This Resume for This JD</h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Get AI-powered recommendations and improve your match score.
+              </p>
+            </div>
+            <button
+              onClick={() =>
+                navigate("/app/resume-optimizer", {
+                  state: {
+                    token: localStorage.getItem("token"),
+                    resumeId: lastMatchData.matchRecord?.resumeId || selectedResumeId,
+                    jobId: lastMatchData.matchRecord?.jobId,
+                    jobTitle: lastMatchData.matchRecord?.jdTitle,
+                    matchData: lastMatchData,
+                  },
+                })
+              }
+              className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-medium text-sm px-5 py-2.5 rounded-lg transition"
+            >
+              <Sparkles className="w-4 h-4" />
+              Optimize This Resume for This JD
+            </button>
+          </div>
+        )}
 
         {/* SQL Analytics Widgets Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

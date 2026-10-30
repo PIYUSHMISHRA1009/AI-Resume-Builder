@@ -1,0 +1,311 @@
+{
+  "metadata": {
+    "timestamp": "2026-08-27T14:40:42.737Z",
+    "durationMs": 250919,
+    "config": {
+      "vectorCount": 1000,
+      "embeddingDimension": 3072,
+      "topK": [
+        1,
+        3,
+        5,
+        10
+      ],
+      "queryCount": 20,
+      "distanceMetric": "cosine"
+    }
+  },
+  "environment": {
+    "mongodbAtlasVectorSearch": "UNAVAILABLE",
+    "qdrant": "UNAVAILABLE",
+    "simulation": true
+  },
+  "dataset": {
+    "vectorCount": 1000,
+    "dimensions": 3072,
+    "checksum": "sha1-like:54fe791d",
+    "queries": 20
+  },
+  "groundTruth": {
+    "methodology": "Exact cosine similarity against full benchmark dataset (in-memory brute-force)",
+    "note": "Independent of both database retrievers"
+  },
+  "mongodb": {
+    "retrieval": {
+      "recall@1": 1,
+      "mrr@1": 1,
+      "ndcg@1": 1,
+      "hitRate@1": 1,
+      "overlap@1": 1,
+      "recall@3": 1,
+      "mrr@3": 1,
+      "ndcg@3": 1,
+      "hitRate@3": 1,
+      "overlap@3": 1,
+      "recall@5": 1,
+      "mrr@5": 1,
+      "ndcg@5": 1,
+      "hitRate@5": 1,
+      "overlap@5": 1,
+      "recall@10": 1,
+      "mrr@10": 1,
+      "ndcg@10": 1,
+      "hitRate@10": 1,
+      "overlap@10": 1
+    },
+    "latency": {
+      "1": {
+        "min": 1175,
+        "avg": 1901.6,
+        "p50": 1557,
+        "p95": 3687,
+        "p99": 3687
+      },
+      "3": {
+        "min": 1183,
+        "avg": 1279.35,
+        "p50": 1239,
+        "p95": 1710,
+        "p99": 1710
+      },
+      "5": {
+        "min": 1155,
+        "avg": 1257.55,
+        "p50": 1245,
+        "p95": 1429,
+        "p99": 1429
+      },
+      "10": {
+        "min": 1206,
+        "avg": 1357.75,
+        "p50": 1283,
+        "p95": 1840,
+        "p99": 1840
+      }
+    },
+    "throughput": {
+      "1": {
+        "qps": 0.5258729490954985
+      },
+      "3": {
+        "qps": 0.7816469300816822
+      },
+      "5": {
+        "qps": 0.7951970100592423
+      },
+      "10": {
+        "qps": 0.7365126127784938
+      }
+    },
+    "filtering": {
+      "none": {
+        "avgLatency": 15611.8,
+        "queries": 5
+      },
+      "userId": {
+        "avgLatency": 1284,
+        "queries": 5
+      },
+      "resumeId": {
+        "avgLatency": 677.6,
+        "queries": 5
+      },
+      "userId+resumeId": {
+        "avgLatency": 607.4,
+        "queries": 5
+      }
+    },
+    "overlap": {},
+    "scale": {},
+    "concurrency": {
+      "1": {
+        "total": 1,
+        "success": 1,
+        "failed": 0,
+        "totalMs": 1258,
+        "avgLatency": 1258,
+        "qps": 0.794912559618442
+      },
+      "5": {
+        "total": 5,
+        "success": 5,
+        "failed": 0,
+        "totalMs": 6965,
+        "avgLatency": 4946.2,
+        "qps": 0.7178750897343862
+      },
+      "10": {
+        "total": 10,
+        "success": 10,
+        "failed": 0,
+        "totalMs": 12182,
+        "avgLatency": 10589.1,
+        "qps": 0.8208832703989493
+      }
+    },
+    "indexing": {
+      "insertMs": 16148
+    },
+    "metadata": {
+      "vectorCount": 1000,
+      "dimensions": 3072,
+      "checksum": "sha1-like:54fe791d",
+      "mode": "ATLAS_VECTOR_SEARCH_UNAVAILABLE",
+      "note": "Using in-memory exact cosine search simulation. NOT representative of MongoDB Atlas Vector Search."
+    }
+  },
+  "qdrant": {
+    "retrieval": {
+      "recall@1": 1,
+      "mrr@1": 1,
+      "ndcg@1": 1,
+      "hitRate@1": 1,
+      "overlap@1": 1,
+      "recall@3": 1,
+      "mrr@3": 1,
+      "ndcg@3": 1,
+      "hitRate@3": 1,
+      "overlap@3": 1,
+      "recall@5": 1,
+      "mrr@5": 1,
+      "ndcg@5": 1,
+      "hitRate@5": 1,
+      "overlap@5": 1,
+      "recall@10": 1,
+      "mrr@10": 1,
+      "ndcg@10": 1,
+      "hitRate@10": 1,
+      "overlap@10": 1
+    },
+    "latency": {
+      "1": {
+        "min": 0,
+        "avg": 4.9,
+        "p50": 4,
+        "p95": 18,
+        "p99": 18
+      },
+      "3": {
+        "min": 0,
+        "avg": 1,
+        "p50": 1,
+        "p95": 5,
+        "p99": 5
+      },
+      "5": {
+        "min": 0,
+        "avg": 0.75,
+        "p50": 1,
+        "p95": 1,
+        "p99": 1
+      },
+      "10": {
+        "min": 0,
+        "avg": 0.75,
+        "p50": 1,
+        "p95": 1,
+        "p99": 1
+      }
+    },
+    "throughput": {
+      "1": {
+        "qps": 204.0816326530612
+      },
+      "3": {
+        "qps": 1000
+      },
+      "5": {
+        "qps": 1333.3333333333333
+      },
+      "10": {
+        "qps": 1333.3333333333333
+      }
+    },
+    "filtering": {
+      "none": {
+        "avgLatency": 6.8,
+        "queries": 5
+      },
+      "userId": {
+        "avgLatency": 0.8,
+        "queries": 5
+      },
+      "resumeId": {
+        "avgLatency": 0.4,
+        "queries": 5
+      },
+      "userId+resumeId": {
+        "avgLatency": 0.4,
+        "queries": 5
+      }
+    },
+    "overlap": {},
+    "scale": {},
+    "concurrency": {
+      "1": {
+        "total": 1,
+        "success": 1,
+        "failed": 0,
+        "totalMs": 0,
+        "avgLatency": 0,
+        "qps": null
+      },
+      "5": {
+        "total": 5,
+        "success": 5,
+        "failed": 0,
+        "totalMs": 4,
+        "avgLatency": 2.2,
+        "qps": 1250
+      },
+      "10": {
+        "total": 10,
+        "success": 10,
+        "failed": 0,
+        "totalMs": 7,
+        "avgLatency": 3.8,
+        "qps": 1428.5714285714284
+      }
+    },
+    "indexing": {},
+    "metadata": {
+      "vectorCount": 1000,
+      "dimensions": 3072,
+      "checksum": "sha1-like:54fe791d",
+      "mode": "QDRANT_UNAVAILABLE",
+      "note": "Using in-memory exact cosine search simulation with Qdrant-style payload filtering. NOT representative of real Qdrant performance."
+    }
+  },
+  "scale": {
+    "10000": {
+      "vectorCount": 10000,
+      "checksum": "sha1-like:54fe791d",
+      "indexMs": 952,
+      "queryCount": 5,
+      "latency": {
+        "min": 7,
+        "avg": 17.6,
+        "p50": 7,
+        "p95": 57,
+        "p99": 57
+      },
+      "qps": 56.81818181818181,
+      "note": "Synthetic scale data. Does not represent production workload."
+    },
+    "100000": {
+      "vectorCount": 100000,
+      "checksum": "sha1-like:54fe791d",
+      "indexMs": 975,
+      "queryCount": 5,
+      "latency": {
+        "min": 6,
+        "avg": 25.4,
+        "p50": 8,
+        "p95": 94,
+        "p99": 94
+      },
+      "qps": 39.37007874015748,
+      "note": "Synthetic scale data. Does not represent production workload."
+    }
+  }
+}

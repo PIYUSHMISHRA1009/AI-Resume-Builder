@@ -2,9 +2,21 @@
   "scripts": {
     "dev": "npm --prefix client run dev",
     "server": "npm --prefix server run server",
-    "start": "npm --prefix server run start"
+    "start": "npm --prefix server run start",
+    "test": "npm --prefix server run test && npm --prefix client run test",
+    "test:all": "npm run test && npm --prefix client run test:e2e",
+    "test:generate-data": "node testing/data-generators/generate-resumes.ts"
   },
   "dependencies": {
-    "@imagekit/nodejs": "^7.4.0"
+    "@imagekit/nodejs": "^7.4.0",
+    "@qdrant/js-client-rest": "^1.19.0"
+  },
+  "devDependencies": {
+    "supertest": "^7.0.0",
+    "mongodb-memory-server": "^10.1.0",
+    "mongoose": "^9.4.1",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "bcrypt": "^6.0.0"
   }
 }

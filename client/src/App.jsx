@@ -8,6 +8,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Preview from './pages/Preview'
 import AnalyticsDashboard from './pages/AnalyticsDashboard'
+import ResumeOptimizer from './pages/ResumeOptimizer'
 import {useDispatch} from 'react-redux'
 import api from './configs/api'
 import {login,setLoading} from './app/features/authSlice'
@@ -52,8 +53,9 @@ const App = () => {
       {/* because we will use subroutes here */}
       <Route path="/app" element={<Layout />}>
         <Route index element={<Dashboard />} />
-        <Route path="analytics" element={<AnalyticsDashboard />} />
-        <Route path="builder/:resumeId" element={<ResumeBuilder />} />
+      <Route path="analytics" element={<AnalyticsDashboard />} />
+      <Route path="resume-optimizer" element={<ResumeOptimizer />} />
+      <Route path="builder/:resumeId" element={<ResumeBuilder />} />
       </Route>
 
       <Route path="view/:resumeId" element={<Preview />} />
