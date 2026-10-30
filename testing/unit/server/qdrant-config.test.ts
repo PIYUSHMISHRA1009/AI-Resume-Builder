@@ -14,7 +14,7 @@ const { mockQdrant, mockState, mockBullet, mockFeedback } = vi.hoisted(() => ({
     createPayloadIndex: vi.fn(),
     upsert: vi.fn(),
     delete: vi.fn(),
-    search: vi.fn(),
+    query: vi.fn(),
   },
   mockBullet: {
     aggregate: vi.fn(),
@@ -67,7 +67,7 @@ const resetQdrant = () => {
   });
   mockQdrant.upsert.mockReset().mockResolvedValue({});
   mockQdrant.delete.mockReset().mockResolvedValue({});
-  mockQdrant.search.mockReset().mockResolvedValue([]);
+  mockQdrant.query.mockReset().mockResolvedValue({ points: [] });
 };
 
 beforeEach(() => {
@@ -136,7 +136,8 @@ describe("Qdrant config and store safety", () => {
     });
     await store.deleteFromQdrant(userId, ["bullet-a", "bullet-b"]);
 
-    expect(mockQdrant.search).toHaveBeenCalledWith("resume_embeddings", expect.objectContaining({
+    expect(mockQdrant.query).toHaveBeenCalledWith("resume_embeddings", expect.objectContaining({
+      query: [0.2, 0.3],
       filter: { must: expect.arrayContaining([{ key: "userId", match: { value: userId } }]) },
     }));
     expect(mockQdrant.delete).toHaveBeenCalledWith("resume_embeddings", {
@@ -188,7 +189,7 @@ describe("Qdrant retrieval fallbacks", () => {
     mockBullet.aggregate.mockRejectedValue(new Error("Atlas vector search unavailable"));
     mockBullet.find.mockReturnValue({ exec: async () => [mongoBullet] });
     mockFeedback.find.mockReturnValue({ lean: async () => [] });
-    mockQdrant.search.mockRejectedValue(new Error(`request failed ${fakeKey}`));
+    mockQdrant.query.mockRejectedValue(new Error(`request failed ${fakeKey}`));
   };
 
   it.each(["qdrant", "shadow"])('returns MongoDB results when Qdrant fails in %s mode', async (mode) => {

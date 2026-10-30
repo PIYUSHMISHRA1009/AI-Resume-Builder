@@ -198,20 +198,20 @@ export const searchVectors = async (queryVector, topK = 5, filter = {}) => {
     });
   }
 
-  const searchParams = {
-    vector: queryVector,
+  const queryParams = {
+    query: queryVector,
     limit: topK * 2, // Get extra to allow for boosting to change order
     with_payload: true,
     with_vector: false,
   };
 
   if (mustConditions.length > 0) {
-    searchParams.filter = { must: mustConditions };
+    queryParams.filter = { must: mustConditions };
   }
 
-  const result = await qdrant.search(COLLECTION_NAME, searchParams);
+  const result = await qdrant.query(COLLECTION_NAME, queryParams);
 
-  return result.map((r) => ({
+  return (result.points || []).map((r) => ({
     bulletId: r.payload.bulletId,
     text: r.payload.text,
     source: r.payload.source,
