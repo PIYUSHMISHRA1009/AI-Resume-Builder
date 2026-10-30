@@ -5,6 +5,7 @@ import RefinementFeedback from "../models/RefinementFeedback.js";
 import ai from "../configs/ai.js";
 import { tailorResume, indexResumeBullets, analyzeSkillGaps, refineBullet } from "../services/ragService.js";
 import { parseResumeTextAndCreate } from "../services/resumeParserService.js";
+import { createAiCacheKey, getOrSetCached, normalizeAiInput } from "../utils/aiCache.js";
 
 const logControllerError = (operation, error) => {
   // Log metadata only: provider messages can contain submitted resume or JD text.
@@ -26,21 +27,27 @@ export const enhanceProfessionalSummary = async (req, res) => {
             return res.status(400).json({ message: 'Missing required fields' });
         }
 
-        const response = await ai.chat.completions.create({
-            model: process.env.OPENAI_MODEL,
-            messages: [
-                {
-                    role: "system",
-                    content: "You are an expert in resume writing. Your task is to enhance the professional summary of a resume. The summary should be 1-2 sentences also highlighting key skills, experience, and career objectives. Make it compelling and ATS-friendly. and only return text no options or anything else."
-                },
-                {
-                    role: "user",
-                    content: userContent,
-                },
-            ],
-        });
+        const normalizedContent = normalizeAiInput(userContent);
+        const cacheKey = createAiCacheKey({ endpoint: "enhance-pro-sum", userId: req.userId, input: normalizedContent });
+        const { value: enhancedContent, status } = await getOrSetCached(
+            cacheKey,
+            process.env.AI_CACHE_TTL_SECONDS || 86400,
+            async () => {
+                const response = await ai.chat.completions.create({
+                    model: process.env.OPENAI_MODEL,
+                    messages: [
+                        {
+                            role: "system",
+                            content: "You are an expert in resume writing. Your task is to enhance the professional summary of a resume. The summary should be 1-2 sentences also highlighting key skills, experience, and career objectives. Make it compelling and ATS-friendly. and only return text no options or anything else."
+                        },
+                        { role: "user", content: normalizedContent },
+                    ],
+                });
+                return response.choices[0].message.content;
+            },
+        );
 
-        const enhancedContent = response.choices[0].message.content;
+        res.set("X-Cache", status);
         return res.status(200).json({ enhancedContent });
 
     } catch (error) {
@@ -62,21 +69,27 @@ export const enhanceJobDescription = async (req, res) => {
             return res.status(400).json({ message: 'Missing required fields' });
         }
 
-        const response = await ai.chat.completions.create({
-            model: process.env.OPENAI_MODEL,
-            messages: [
-                {
-                    role: "system",
-                    content: "You are an expert in resume writing. Your task is to enhance the job description of a resume. The job description should be only in 1-2 sentence also highlighting key responsibilities and achievements. Use action verbs and quantifiable results where possible. Make it ATS-friendly. and only return text no options or anything else."
-                },
-                {
-                    role: "user",
-                    content: userContent,
-                },
-            ],
-        });
+        const normalizedContent = normalizeAiInput(userContent);
+        const cacheKey = createAiCacheKey({ endpoint: "enhance-job-desc", userId: req.userId, input: normalizedContent });
+        const { value: enhancedContent, status } = await getOrSetCached(
+            cacheKey,
+            process.env.AI_CACHE_TTL_SECONDS || 86400,
+            async () => {
+                const response = await ai.chat.completions.create({
+                    model: process.env.OPENAI_MODEL,
+                    messages: [
+                        {
+                            role: "system",
+                            content: "You are an expert in resume writing. Your task is to enhance the job description of a resume. The job description should be only in 1-2 sentence also highlighting key responsibilities and achievements. Use action verbs and quantifiable results where possible. Make it ATS-friendly. and only return text no options or anything else."
+                        },
+                        { role: "user", content: normalizedContent },
+                    ],
+                });
+                return response.choices[0].message.content;
+            },
+        );
 
-        const enhancedContent = response.choices[0].message.content;
+        res.set("X-Cache", status);
         return res.status(200).json({ enhancedContent });
 
     } catch (error) {
