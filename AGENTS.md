@@ -79,6 +79,7 @@ Do not commit `.env` files or credentials. `server/.env.example` contains placeh
 - `QDRANT_URL` is the service endpoint, `QDRANT_API_KEY` authenticates requests, and `QDRANT_COLLECTION` selects the collection (default `resume_embeddings`). `EMBEDDING_MODEL` selects the embedding model and `EMBEDDING_DIMENSIONS` configures vector size (default `3072`).
 - Bootstrap uses the configured vector size and cosine distance. It creates keyword payload indexes for `userId`, `resumeId`, `embeddingModel`, and `bulletId`. Searches require a `userId` filter; deletes require both `userId` and bullet IDs. Bootstrap does not drop collections or delete points. A dimension or distance mismatch prevents Qdrant retrieval and MongoDB remains the fallback.
 - Run `cd server && npm run qdrant:check` for the read-only connectivity and collection check. It reports configuration booleans and counts, never credential values.
+- Qdrant operational scripts report status without printing raw request errors, which may contain endpoint details.
 - Run `cd server && npm run qdrant:migrate -- --dry-run` to count eligible MongoDB bullets without initializing or writing to Qdrant. A real backfill supports `--batch-size`, `--limit`, `--after-id`, and `--checkpoint` options; do not run it against real data without an explicit task request.
 - Qdrant tests use `vi.mock` for the client and do not contact Qdrant.
 - If a Qdrant key is exposed, rotate it in the Qdrant console, update `server/.env` locally and the host's environment variables, and never commit the key.
