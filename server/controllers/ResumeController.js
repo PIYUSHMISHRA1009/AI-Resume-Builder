@@ -12,7 +12,7 @@ const safeUnlink = (filePath) => {
   if (!filePath) return;
   try {
     fs.unlinkSync(filePath);
-  } catch (_err) {
+  } catch {
     // ignore cleanup errors
   }
 };
@@ -37,7 +37,8 @@ export const createResume = async (req, res) => {
         return res.status(201).json({ message: "Resume Created Successfully", resume: newResume });
 
     } catch (error) {
-        return res.status(400).json({ message: error.message });
+        if (error.name === "ValidationError") return res.status(400).json({ message: "Invalid resume data" });
+        return res.status(500).json({ message: "Internal server error" });
     }
 };
 
@@ -48,12 +49,14 @@ export const deleteResume = async (req, res) => {
         const userId = req.userId;
         const { resumeId } = req.params;
 
-        await Resume.findOneAndDelete({ userId, _id: resumeId });
+        const deleted = await Resume.findOneAndDelete({ userId, _id: resumeId });
+        if (!deleted) return res.status(404).json({ message: "Resume not found" });
 
         return res.status(200).json({ message: 'Resume deleted successfully' });
 
     } catch (error) {
-        return res.status(400).json({ message: error.message });
+        if (error.name === "CastError") return res.status(400).json({ message: "Invalid resume ID" });
+        return res.status(500).json({ message: "Internal server error" });
     }
 };
 
@@ -77,7 +80,8 @@ export const getResumeById = async (req, res) => {
         return res.status(200).json({ resume });
 
     } catch (error) {
-        return res.status(400).json({ message: error.message });
+        if (error.name === "CastError") return res.status(400).json({ message: "Invalid resume ID" });
+        return res.status(500).json({ message: "Internal server error" });
     }
 };
 
@@ -96,7 +100,8 @@ export const getPublicResumeId = async (req, res) => {
         return res.status(200).json({ resume });
 
     } catch (error) {
-        return res.status(400).json({ message: error.message });
+        if (error.name === "CastError") return res.status(400).json({ message: "Invalid resume ID" });
+        return res.status(500).json({ message: "Internal server error" });
     }
 };
 
@@ -142,9 +147,9 @@ export const updateResume = async (req, res) => {
 
                 resumeDataCopy.personal_info = resumeDataCopy.personal_info || {};
                 resumeDataCopy.personal_info.image = response.url;
-            } catch (imageError) {
-                console.error("ImageKit upload failed:", imageError.message);
-                return res.status(400).json({ message: `Image upload failed: ${imageError.message}` });
+            } catch {
+                console.error("ImageKit upload failed");
+                return res.status(502).json({ message: "Image upload failed" });
             } finally {
                 safeUnlink(uploadedFilePath);
             }
@@ -156,11 +161,16 @@ export const updateResume = async (req, res) => {
                 { returnDocument:'after' }
         );
 
+        if (!resume) return res.status(404).json({ message: "Resume not found" });
+
         return res.status(200).json({ message: 'Saved Successfully', resume });
 
     } catch (error) {
         safeUnlink(uploadedFilePath);
-        console.error("Resume update error:", error);
-        return res.status(error instanceof multer.MulterError ? 400 : 500).json({ message: error.message });
+        console.error("Resume update failed");
+        if (error instanceof multer.MulterError || error instanceof SyntaxError || error.name === "CastError" || error.name === "ValidationError") {
+            return res.status(400).json({ message: "Invalid resume data" });
+        }
+        return res.status(500).json({ message: "Internal server error" });
     }
 };

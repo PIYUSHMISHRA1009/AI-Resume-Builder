@@ -70,8 +70,8 @@ export const parseResumeTextAndCreate = async (resumeText, title, userId) => {
 
   try {
     await indexResumeBullets(newResume._id, userId);
-  } catch (err) {
-    console.error("RAG indexing failed (non-blocking):", err.message);
+  } catch {
+    console.error("RAG indexing failed (non-blocking)");
   }
 
   return newResume;

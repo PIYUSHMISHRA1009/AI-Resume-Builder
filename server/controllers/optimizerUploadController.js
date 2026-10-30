@@ -16,9 +16,9 @@ export const uploadResumeDocument = async (req, res) => {
     let extractedText;
     try {
       extractedText = await extractTextFromFile(file.path, file.mimetype);
-    } catch (extractError) {
+    } catch {
       safeUnlink(uploadedFilePath);
-      return res.status(400).json({ message: `Failed to extract text from file: ${extractError.message}` });
+      return res.status(400).json({ message: "Failed to extract text from file" });
     } finally {
       safeUnlink(uploadedFilePath);
     }
@@ -35,10 +35,10 @@ export const uploadResumeDocument = async (req, res) => {
       message: "Resume uploaded and parsed successfully",
       resume: newResume,
     });
-  } catch (error) {
+  } catch {
     safeUnlink(uploadedFilePath);
-    console.error("uploadResumeDocument error:", error);
-    return res.status(500).json({ message: error.message });
+    console.error("uploadResumeDocument failed");
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -55,9 +55,9 @@ export const uploadJdDocument = async (req, res) => {
     let extractedText;
     try {
       extractedText = await extractTextFromFile(file.path, file.mimetype);
-    } catch (extractError) {
+    } catch {
       safeUnlink(uploadedFilePath);
-      return res.status(400).json({ message: `Failed to extract text from file: ${extractError.message}` });
+      return res.status(400).json({ message: "Failed to extract text from file" });
     } finally {
       safeUnlink(uploadedFilePath);
     }
@@ -73,9 +73,9 @@ export const uploadJdDocument = async (req, res) => {
       extractedText,
       filename: file.originalname,
     });
-  } catch (error) {
+  } catch {
     safeUnlink(uploadedFilePath);
-    console.error("uploadJdDocument error:", error);
-    return res.status(500).json({ message: error.message });
+    console.error("uploadJdDocument failed");
+    return res.status(500).json({ message: "Internal server error" });
   }
 };

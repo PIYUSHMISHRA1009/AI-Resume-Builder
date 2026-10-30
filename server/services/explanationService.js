@@ -49,8 +49,8 @@ export const generateMatchExplanation = async (matchRecord, jdTitle = "Target Ro
     });
 
     return response.choices[0]?.message?.content || "Candidate match evaluation complete based on calculated metrics.";
-  } catch (err) {
-    console.error("AI Explanation fallback:", err.message);
+  } catch {
+    console.error("AI Explanation fallback: provider request failed");
     return `Candidate-JD Match Score is ${matchRecord.overallScore}%. Score is calculated deterministically based on ${matchRecord.matchedSkillsCount} matched skills and ${matchRecord.missingSkillsCount} skill gaps.`;
   }
 };

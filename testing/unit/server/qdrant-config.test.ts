@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockQdrant, mockState, mockBullet, mockFeedback } = vi.hoisted(() => ({
+const { mockQdrant, mockState, mockBullet, mockFeedback, mockResume } = vi.hoisted(() => ({
   mockState: {
     collectionExists: true,
     vectorSize: 3072,
@@ -23,6 +23,7 @@ const { mockQdrant, mockState, mockBullet, mockFeedback } = vi.hoisted(() => ({
     deleteMany: vi.fn(),
   },
   mockFeedback: { find: vi.fn() },
+  mockResume: { findOne: vi.fn() },
 }));
 
 vi.mock("../../../server/node_modules/@qdrant/js-client-rest/dist/esm/index.js", () => ({
@@ -30,7 +31,7 @@ vi.mock("../../../server/node_modules/@qdrant/js-client-rest/dist/esm/index.js",
 }));
 vi.mock("../../../server/models/Bullet.js", () => ({ default: mockBullet }));
 vi.mock("../../../server/models/RefinementFeedback.js", () => ({ default: mockFeedback }));
-vi.mock("../../../server/models/Resume.js", () => ({ default: {} }));
+vi.mock("../../../server/models/Resume.js", () => ({ default: mockResume }));
 vi.mock("../../../server/models/RAGEvalLog.js", () => ({ default: {} }));
 vi.mock("../../../server/configs/ai.js", () => ({ default: {} }));
 
@@ -77,6 +78,8 @@ beforeEach(() => {
   resetQdrant();
   mockBullet.aggregate.mockReset();
   mockBullet.find.mockReset();
+  mockBullet.deleteMany.mockReset().mockResolvedValue({});
+  mockResume.findOne.mockReset();
   mockFeedback.find.mockReset().mockReturnValue({ lean: async () => [] });
 });
 
@@ -148,6 +151,21 @@ describe("Qdrant config and store safety", () => {
         ],
       },
     });
+  });
+
+  it("scopes reindex lookups and MongoDB deletion to the resume owner", async () => {
+    const resumeId = "507f1f77bcf86cd799439012";
+    mockResume.findOne.mockResolvedValue({ _id: resumeId, userId, experience: [], projects: [], education: [] });
+    mockBullet.find.mockReturnValue({ distinct: async () => ["bullet-a"] });
+    const { indexResumeBullets } = await import("../../../server/services/ragService.js");
+
+    await indexResumeBullets(resumeId, userId);
+
+    expect(mockBullet.find).toHaveBeenCalledWith({ resumeId, userId });
+    expect(mockBullet.deleteMany).toHaveBeenCalledWith({ resumeId, userId });
+    expect(mockQdrant.delete).toHaveBeenCalledWith("resume_embeddings", expect.objectContaining({
+      filter: { must: expect.arrayContaining([{ key: "userId", match: { value: userId } }]) },
+    }));
   });
 
   it("refuses an existing collection with a mismatched vector size", async () => {

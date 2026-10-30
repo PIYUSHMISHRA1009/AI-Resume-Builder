@@ -29,14 +29,14 @@ export const getOptimization = async (req, res) => {
       return res.status(429).json({ message: error.message });
     }
     if (error instanceof AiProviderUnavailableError) {
-      return res.status(503).json({ message: error.message });
+      return res.status(503).json({ message: "AI recommendations are temporarily unavailable. Please try again shortly." });
     }
     if (error instanceof AiTimeoutError) {
-      return res.status(504).json({ message: error.message });
+      return res.status(504).json({ message: "AI recommendation request timed out. Please try again." });
     }
     if (error instanceof AiMalformedResponseError) {
-      return res.status(500).json({ message: error.message });
+      return res.status(500).json({ message: "AI recommendations could not be generated. Please try again." });
     }
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: "Internal server error" });
   }
 };

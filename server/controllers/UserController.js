@@ -46,8 +46,8 @@ export const registerUser = async (req, res) => {
             message: "User Created Successfully"
         })
 
-    } catch (error) {
-        res.status(500).json({ message: error.message })
+    } catch {
+        res.status(500).json({ message: "Internal server error" })
     }
 }
 
@@ -78,8 +78,8 @@ export const LoginUser = async (req, res) => {
 
         return res.status(200).json({ message: 'Login Successful', token, user })
 
-    } catch (error) {
-        res.status(500).json({ message: error.message })
+    } catch {
+        res.status(500).json({ message: "Internal server error" })
     }
 }
 
@@ -100,10 +100,8 @@ export const getUserById = async (req, res) => {
         user.password=undefined;
         return res.status(200).json({user})
 
-        return res.status(200).json({ message: 'Login Successful', token, user })
-
-    } catch (error) {
-        res.status(500).json({ message: error.message })
+    } catch {
+        res.status(500).json({ message: "Internal server error" })
     }
 }
 
@@ -121,7 +119,7 @@ export const getUserResumes=async(req,res)=>{
         const resumes=await Resume.find({userId})
         return res.status(200).json({resumes})
 
-    }catch (error) {
-        res.status(500).json({ message: error.message })
+    }catch {
+        res.status(500).json({ message: "Internal server error" })
     }
 }

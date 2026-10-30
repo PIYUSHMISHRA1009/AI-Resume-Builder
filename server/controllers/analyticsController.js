@@ -62,8 +62,8 @@ export const parseAndSaveJD = async (req, res) => {
     await syncDataToSQLite({ users, jds: [jd] });
 
     return res.status(201).json({ message: "Job Description Saved Successfully", jd });
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
+  } catch {
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -127,8 +127,8 @@ export const evaluateMatch = async (req, res) => {
       matchRecord,
       aiExplanation,
     });
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
+  } catch {
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -166,8 +166,8 @@ export const createResumeVersion = async (req, res) => {
     await syncDataToSQLite({ users: user ? [user] : [], versions: [version] });
 
     return res.status(201).json({ message: "Resume Version Snapshot Created", version });
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
+  } catch {
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -182,8 +182,8 @@ export const getResumeVersionsAnalytics = async (req, res) => {
 
     const progression = await getVersionProgression(userId, resumeId);
     return res.status(200).json({ progression });
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
+  } catch {
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -196,7 +196,7 @@ export const getDashboardMetrics = async (req, res) => {
     const userId = req.userId;
     const analytics = await getDashboardAnalytics(userId);
     return res.status(200).json({ analytics });
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
+  } catch {
+    return res.status(500).json({ message: "Internal server error" });
   }
 };

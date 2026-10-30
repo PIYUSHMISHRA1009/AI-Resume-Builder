@@ -103,16 +103,16 @@ export const indexResumeBullets = async (resumeId, userId) => {
   let existingBulletIds = [];
   if (VECTOR_STORE !== "mongodb") {
     try {
-      existingBulletIds = await Bullet.find({ resumeId: resume._id })
+      existingBulletIds = await Bullet.find({ resumeId: resume._id, userId: resume.userId })
         .distinct("_id")
         .then(ids => ids.map(id => id.toString()));
-    } catch (err) {
-      console.error("[Qdrant] Failed to get existing bullet IDs:", err.message);
+    } catch {
+      console.error("[Qdrant] Failed to get existing bullet IDs");
     }
   }
 
   // Clear previous bullets for this resume (re-index is idempotent)
-  await Bullet.deleteMany({ resumeId: resume._id });
+  await Bullet.deleteMany({ resumeId: resume._id, userId: resume.userId });
 
   // Also delete from Qdrant if enabled
   if (VECTOR_STORE !== "mongodb" && existingBulletIds.length > 0) {

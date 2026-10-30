@@ -21,7 +21,7 @@ const connectDB = async () => {
         try {
             await mongoose.connect(mongodbURI, CONNECTION_OPTIONS);
         } catch (primaryErr) {
-            console.warn("Primary MongoDB connection failed (" + primaryErr.message + ").");
+            console.warn("Primary MongoDB connection failed.");
             if (!mongodbURI.includes("127.0.0.1") && !mongodbURI.includes("localhost")) {
                 console.log(`Attempting local MongoDB fallback (${LOCAL_MONGODB_URI})...`);
                 await mongoose.connect(LOCAL_MONGODB_URI, CONNECTION_OPTIONS);
@@ -30,7 +30,7 @@ const connectDB = async () => {
             }
         }
     } catch (error) {
-        console.error("MongoDB connection warning:", error.message || error);
+        console.error("MongoDB connection warning: connection unavailable");
         console.log("Application continuing in standalone/SQLite mode...");
     }
 };
