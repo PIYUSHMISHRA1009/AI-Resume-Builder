@@ -1,7 +1,8 @@
 import jwt from 'jsonwebtoken'
 
 const protect=async(req,res,next)=>{
-    const token = req.headers.authorization
+    const authorization = req.headers.authorization
+    const token = authorization?.match(/^Bearer\s+(.+)$/i)?.[1] || authorization
     if(!token){
         return res.status(401).json({message:'Unauthorized'});
     }

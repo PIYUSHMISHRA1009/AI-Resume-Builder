@@ -6,12 +6,12 @@ import ai from "../configs/ai.js";
 import { tailorResume, indexResumeBullets, analyzeSkillGaps, refineBullet } from "../services/ragService.js";
 import { parseResumeTextAndCreate } from "../services/resumeParserService.js";
 
-const extractProviderError = (error) => {
-  if (!error) return "Unknown error";
-  if (error.message) return error.message;
-  if (error.response?.data?.error?.message) return error.response.data.error.message;
-  if (error.code) return `Provider error (${error.code})`;
-  return "AI provider request failed";
+const logControllerError = (operation, error) => {
+  // Log metadata only: provider messages can contain submitted resume or JD text.
+  console.error(`${operation} failed`, {
+    name: error?.name || "Error",
+    code: error?.code,
+  });
 };
 
 
@@ -44,9 +44,8 @@ export const enhanceProfessionalSummary = async (req, res) => {
         return res.status(200).json({ enhancedContent });
 
     } catch (error) {
-        const providerError = extractProviderError(error);
-        console.error("enhanceProfessionalSummary error:", providerError);
-        return res.status(400).json({ message: providerError });
+        logControllerError("enhanceProfessionalSummary", error);
+        return res.status(500).json({ message: 'Internal server error' });
     }
 };
 
@@ -81,9 +80,8 @@ export const enhanceJobDescription = async (req, res) => {
         return res.status(200).json({ enhancedContent });
 
     } catch (error) {
-        const providerError = extractProviderError(error);
-        console.error("enhanceJobDescription error:", providerError);
-        return res.status(502).json({ message: providerError });
+        logControllerError("enhanceJobDescription", error);
+        return res.status(500).json({ message: 'Internal server error' });
     }
 };
 
@@ -106,9 +104,8 @@ export const uploadResume = async (req, res) => {
         res.json(newResume);
 
     } catch (error) {
-        const providerError = extractProviderError(error);
-        console.error("uploadResume error:", providerError);
-        return res.status(500).json({ message: providerError });
+        logControllerError("uploadResume", error);
+        return res.status(500).json({ message: 'Internal server error' });
     }
 };
 
@@ -137,9 +134,8 @@ export const tailorResumeController = async (req, res) => {
         });
 
     } catch (error) {
-        const providerError = extractProviderError(error);
-        console.error("tailorResumeController error:", providerError);
-        return res.status(502).json({ message: providerError });
+        logControllerError("tailorResumeController", error);
+        return res.status(500).json({ message: 'Internal server error' });
     }
 };
 
@@ -166,9 +162,8 @@ export const indexResumeBulletsController = async (req, res) => {
         });
 
     } catch (error) {
-        const providerError = extractProviderError(error);
-        console.error("indexResumeBulletsController error:", providerError);
-        return res.status(500).json({ message: providerError });
+        logControllerError("indexResumeBulletsController", error);
+        return res.status(500).json({ message: 'Internal server error' });
     }
 };
 
@@ -190,9 +185,8 @@ export const getRagLogsController = async (req, res) => {
         return res.status(200).json({ logs });
 
     } catch (error) {
-        const providerError = extractProviderError(error);
-        console.error("getRagLogsController error:", providerError);
-        return res.status(500).json({ message: providerError });
+        logControllerError("getRagLogsController", error);
+        return res.status(500).json({ message: 'Internal server error' });
     }
 };
 
@@ -228,9 +222,8 @@ export const getRagLogsController = async (req, res) => {
         bulletId,
       });
     } catch (error) {
-      const providerError = extractProviderError(error);
-      console.error("refineBulletController error:", providerError);
-      res.status(500).json({ message: providerError });
+      logControllerError("refineBulletController", error);
+      res.status(500).json({ message: 'Internal server error' });
     }
   };
 
@@ -275,8 +268,7 @@ export const getRagLogsController = async (req, res) => {
         skillGaps: enhancedSkillGaps,
       });
     } catch (error) {
-      const providerError = extractProviderError(error);
-      console.error("skillGapAnalysisController error:", providerError);
-      res.status(500).json({ message: providerError });
+      logControllerError("skillGapAnalysisController", error);
+      res.status(500).json({ message: 'Internal server error' });
     }
   };
