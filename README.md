@@ -337,6 +337,39 @@ npm test
 
 The older MongoMemoryServer suites are opt-in: `npm run test:legacy-integration`.
 
+## Qdrant vector store
+
+Qdrant is optional. Configure these server environment variables:
+
+- `VECTOR_STORE`: `mongodb` (default), `qdrant`, or `shadow`.
+- `QDRANT_URL`: Qdrant service endpoint.
+- `QDRANT_API_KEY`: Qdrant authentication key.
+- `QDRANT_COLLECTION`: collection name; defaults to `resume_embeddings`.
+- `EMBEDDING_MODEL`: embedding model name. The application default is `gemini-embedding-2`; `.env.example` selects `text-embedding-3-large`.
+- `EMBEDDING_DIMENSIONS`: vector size used for collection setup and migration filtering; defaults to `3072`.
+
+`mongodb` does not use Qdrant and needs no Qdrant credentials. `qdrant` uses Qdrant for retrieval and falls back to MongoDB when Qdrant is unavailable, misconfigured, or returns an error. `shadow` returns MongoDB results and compares Qdrant results; Qdrant failures leave MongoDB authoritative. Unknown modes, an invalid `QDRANT_URL`, or missing `QDRANT_URL` or `QDRANT_API_KEY` produce a warning and use MongoDB.
+
+The default collection uses cosine distance. Its vector size follows `EMBEDDING_DIMENSIONS` (default `3072`). Bootstrap creates keyword payload indexes for `userId`, `resumeId`, `embeddingModel`, and `bulletId`; a mismatched existing vector size or distance prevents Qdrant retrieval and does not delete or recreate the collection. Every Qdrant search and delete is scoped by `userId`.
+
+Run the read-only health check from `server/`:
+
+```bash
+npm run qdrant:check
+```
+
+It reports whether configuration values are present, Qdrant reachability and authentication, collection settings, the `userId` index, and point counts. It never prints the Qdrant URL or key. MongoDB bullet counts are included when MongoDB is reachable.
+
+The backfill is batch-limited and resumable. Its dry run counts eligible MongoDB bullets without initializing Qdrant or writing data:
+
+```bash
+npm run qdrant:migrate -- --dry-run
+```
+
+For an explicitly authorized real backfill, `--batch-size`, `--limit`, `--after-id`, and `--checkpoint` control batching and resumption. The script upserts stable point IDs and never deletes from MongoDB or Qdrant. Do not run it against production data without approval.
+
+Qdrant tests mock the client with `vi.mock`; they do not use live Qdrant, MongoDB, or embedding services. If a Qdrant key is exposed, rotate it in the Qdrant console, update `server/.env` locally and the host's environment variables, and never commit the key.
+
 ## Redis (optional)
 
 Redis provides per-user rate limiting for AI routes and response caching for professional-summary and job-description text enhancement. Redis is off unless `REDIS_URL` is set. Rate limiting and caching fail open if Redis is unavailable, so requests continue without Redis. Start a local Redis instance with:

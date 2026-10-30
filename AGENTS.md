@@ -73,6 +73,16 @@ Set server variables in `server/.env`; set the client API base URL as `VITE_BASE
 
 Do not commit `.env` files or credentials. `server/.env.example` contains placeholders and safe local defaults only.
 
+## Qdrant operations
+
+- `mongodb` is the default and does not require Qdrant variables. `qdrant` uses Qdrant for retrieval and falls back to MongoDB on Qdrant errors. `shadow` returns MongoDB results while comparing Qdrant retrieval; Qdrant errors leave MongoDB authoritative. Unknown modes, invalid endpoint URLs, and missing Qdrant credentials fall back to `mongodb` with a warning.
+- `QDRANT_URL` is the service endpoint, `QDRANT_API_KEY` authenticates requests, and `QDRANT_COLLECTION` selects the collection (default `resume_embeddings`). `EMBEDDING_MODEL` selects the embedding model and `EMBEDDING_DIMENSIONS` configures vector size (default `3072`).
+- Bootstrap uses the configured vector size and cosine distance. It creates keyword payload indexes for `userId`, `resumeId`, `embeddingModel`, and `bulletId`. Searches require a `userId` filter; deletes require both `userId` and bullet IDs. Bootstrap does not drop collections or delete points. A dimension or distance mismatch prevents Qdrant retrieval and MongoDB remains the fallback.
+- Run `cd server && npm run qdrant:check` for the read-only connectivity and collection check. It reports configuration booleans and counts, never credential values.
+- Run `cd server && npm run qdrant:migrate -- --dry-run` to count eligible MongoDB bullets without initializing or writing to Qdrant. A real backfill supports `--batch-size`, `--limit`, `--after-id`, and `--checkpoint` options; do not run it against real data without an explicit task request.
+- Qdrant tests use `vi.mock` for the client and do not contact Qdrant.
+- If a Qdrant key is exposed, rotate it in the Qdrant console, update `server/.env` locally and the host's environment variables, and never commit the key.
+
 ## Authentication and AI routes
 
 Registration and login issue JWTs. Protected routes accept `Authorization: Bearer <token>` and the legacy raw token header. Middleware verifies the token and sets `req.userId`; user-owned data queries must include that ID. The public resume route only returns resumes marked public.
